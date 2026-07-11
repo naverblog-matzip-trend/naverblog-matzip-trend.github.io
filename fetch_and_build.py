@@ -77,6 +77,16 @@ try:
             "본 포스팅은", "해당 게시물은", "소정의 활동비",
         ]
     try:
+        from config import GENUINE_KEYWORDS
+    except ImportError:
+        # "진짜 내돈내산" 판별용 키워드 - 협찬 문구가 없다고 자동으로 진짜인 건 아니라서,
+        # 반대로 이런 문구가 있으면 더 신뢰도 높은 후기로 본다
+        GENUINE_KEYWORDS = ["내돈내산", "내돈내먹", "영수증", "카드내역", "직접 결제"]
+    try:
+        from config import MIN_SAMPLE_FOR_GENUINE_RATIO
+    except ImportError:
+        MIN_SAMPLE_FOR_GENUINE_RATIO = 5  # 이 값 미만이면 지수를 표시하지 않음 (표본 너무 적음)
+    try:
         from config import TOP_N_PER_REGION
     except ImportError:
         TOP_N_PER_REGION = 5  # 지역별 탭에는 기본 5개까지만 표시
@@ -178,11 +188,23 @@ def is_sponsored_post(title: str, description: str) -> bool:
     return any(keyword in text for keyword in SPONSORED_KEYWORDS)
 
 
+def is_genuine_post(title: str, description: str) -> bool:
+    """
+    "협찬 문구가 없다"는 건 소극적 증거일 뿐이고, "내돈내산/영수증/카드내역" 같은
+    문구가 실제로 있는 건 훨씬 적극적인 증거다. 이 함수는 그런 '진짜 후기' 신호가
+    있는지 확인한다. (SPONSORED_KEYWORDS 필터를 통과한 게시물에 대해서만 호출됨)
+    """
+    text = strip_tags(title) + " " + strip_tags(description)
+    return any(keyword in text for keyword in GENUINE_KEYWORDS)
+
+
 def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tuple:
     """
     블로그검색 API로 특정 식당의 '이번 주'/'지난 주' 언급 수를 계산한다.
     postdate(YYYYMMDD) 필드를 기준으로 집계.
     협찬/광고/기자단 문구가 포함된 게시물은 집계에서 제외한다.
+    (제외되지 않은 게시물 중에서는 "내돈내산" 계열 문구 비율도 함께 집계한다
+    -> get_genuine_ratio()에서 이 값으로 "내돈내산 지수"를 계산함)
 
     API 한 번 호출은 최대 100건까지만 주므로, MAX_BLOG_RESULTS까지 여러 번
     페이지를 넘겨가며 가져온다(start 파라미터 사용). 최신순 정렬이므로
@@ -198,6 +220,7 @@ def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tup
     this_week_count = 0
     last_week_count = 0
     filtered_count = 0
+    genuine_count = 0  # 협찬 필터를 통과한 글 중, "내돈내산" 계열 문구가 있었던 개수
 
     # start=1부터 100씩 늘려가며 페이지를 넘긴다 (네이버 API는 한 번에 최대 100건만 줌)
     start = 1
@@ -231,9 +254,15 @@ def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tup
             if post_date > today:
                 continue  # 혹시 미래 날짜로 잘못 찍힌 데이터 방어
 
-            if is_sponsored_post(item.get("title", ""), item.get("description", "")):
+            title = item.get("title", "")
+            description = item.get("description", "")
+
+            if is_sponsored_post(title, description):
                 filtered_count += 1
                 continue  # 협찬/광고 추정 게시물은 집계에서 제외
+
+            if is_genuine_post(title, description):
+                genuine_count += 1  # "내돈내산" 계열 문구가 실제로 있었던 글
 
             if post_date >= this_week_start:
                 this_week_count += 1
@@ -246,7 +275,19 @@ def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tup
             break
         start += 100
 
-    return this_week_count, last_week_count, filtered_count
+    return this_week_count, last_week_count, filtered_count, genuine_count
+
+
+def get_genuine_ratio(this_week_count: int, last_week_count: int, genuine_count: int):
+    """
+    협찬 필터를 통과한 전체 게시물(this_week+last_week) 중 "내돈내산" 계열
+    문구가 있었던 비율(%)을 계산한다. 표본이 MIN_SAMPLE_FOR_GENUINE_RATIO보다
+    적으면 신뢰도가 낮으므로 None을 반환한다 (화면에 지수를 표시하지 않음).
+    """
+    total = this_week_count + last_week_count
+    if total < MIN_SAMPLE_FOR_GENUINE_RATIO:
+        return None
+    return round(genuine_count / total * 100)
 
 
 def get_region_volume(region: str) -> int:
@@ -300,11 +341,12 @@ def build_ranking() -> tuple:
                 continue  # 이미 다른 지역에서 나왔던 식당이면 중복 집계 방지
             seen_names.add(name)
 
-            this_week, last_week, filtered = get_weekly_mention_counts(name, today)
+            this_week, last_week, filtered, genuine = get_weekly_mention_counts(name, today)
             total_filtered += filtered
             if filtered:
                 print(f"    (협찬/광고 추정 {filtered}건 제외)")
             growth = this_week - last_week  # 이게 바로 "급상승" 순위를 매기는 핵심 숫자
+            genuine_ratio = get_genuine_ratio(this_week, last_week, genuine)
 
             # 최소 언급량 필터: 우연히 1~2건 튄 걸 급상승으로 착시하지 않도록
             if this_week < 2:
@@ -317,8 +359,10 @@ def build_ranking() -> tuple:
                 "last_week": last_week,
                 "growth": growth,
                 "filtered": filtered,
+                "genuine_ratio": genuine_ratio,  # None이면 표본 부족 -> 화면에 배지 안 뜸
             })
-            print(f"  - {name}: 이번주 {this_week} / 지난주 {last_week} (증가 {growth})")
+            ratio_note = f", 내돈내산 {genuine_ratio}%" if genuine_ratio is not None else ""
+            print(f"  - {name}: 이번주 {this_week} / 지난주 {last_week} (증가 {growth}{ratio_note})")
 
     # growth(증가폭) 큰 순서로 정렬. growth가 같으면 this_week가 큰 쪽을 우선(동점 처리)
     results.sort(key=lambda x: (x["growth"], x["this_week"]), reverse=True)
@@ -409,6 +453,7 @@ def render_cards(items: list) -> str:
     """
     일반 탭("전체", 지역별 탭)에서 쓰는 식당 카드 렌더러.
     각 식당을 카드 하나로 만들고, 클릭하면 네이버 지도로 연결되는 링크(<a>)로 감싼다.
+    genuine_ratio(내돈내산 지수)가 있으면 이름 옆에 색깔 배지로 같이 보여준다.
     """
     if not items:
         return '<p style="text-align:center;color:#999;padding:20px 0;">데이터가 없습니다.</p>'
@@ -416,12 +461,26 @@ def render_cards(items: list) -> str:
     for i, r in enumerate(items, start=1):
         growth_badge = f"+{r['growth']}" if r["growth"] > 0 else str(r["growth"])
         map_url = naver_map_link(r["name"], r["region"])
+
+        # 내돈내산 지수 배지: 70% 이상=초록(신뢰), 40~69%=주황(보통), 40% 미만=빨강(주의)
+        # 표본이 너무 적으면(genuine_ratio가 None) 배지 자체를 안 보여준다
+        genuine_ratio = r.get("genuine_ratio")
+        genuine_badge_html = ""
+        if genuine_ratio is not None:
+            if genuine_ratio >= 70:
+                tier_class = "genuine-high"
+            elif genuine_ratio >= 40:
+                tier_class = "genuine-mid"
+            else:
+                tier_class = "genuine-low"
+            genuine_badge_html = f'<span class="genuine-badge {tier_class}">내돈내산 {genuine_ratio}%</span>'
+
         rows_html += f"""
         <a class="card" href="{map_url}" target="_blank" rel="noopener">
           <div class="rank">{i}</div>
           <div class="info">
             <div class="name">{r['name']} <span class="map-icon">📍</span></div>
-            <div class="region">{r['region']}</div>
+            <div class="region">{r['region']} {genuine_badge_html}</div>
           </div>
           <div class="stats">
             <span class="growth">{growth_badge}</span>
@@ -651,6 +710,26 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     font-size: 12px;
     color: #999;
     margin-top: 2px;
+  }}
+  .genuine-badge {{
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 4px;
+  }}
+  .genuine-high {{
+    background: #e6f7ee;
+    color: #0f8a4f;
+  }}
+  .genuine-mid {{
+    background: #fff4e0;
+    color: #b8720a;
+  }}
+  .genuine-low {{
+    background: #fdeaea;
+    color: #c92a2a;
   }}
   .stats {{
     text-align: right;
