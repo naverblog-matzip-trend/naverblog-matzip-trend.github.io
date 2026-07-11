@@ -69,6 +69,14 @@ try:
         from config import MAX_BLOG_RESULTS
     except ImportError:
         MAX_BLOG_RESULTS = 300  # 식당 하나당 최대 조회할 게시물 수 (100의 배수, 최대 1000)
+    try:
+        from config import GOOGLE_SITE_VERIFICATION
+    except ImportError:
+        GOOGLE_SITE_VERIFICATION = ""  # Google Search Console 소유자 인증 코드
+    try:
+        from config import NAVER_SITE_VERIFICATION
+    except ImportError:
+        NAVER_SITE_VERIFICATION = ""  # 네이버 서치어드바이저 소유자 인증 코드
 except ImportError:
     raise SystemExit(
         "config.py가 없습니다. config.example.py를 config.py로 복사한 뒤 "
@@ -300,6 +308,10 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
 <meta property="og:description" content="네이버 블로그 언급량 기준, 이번 주 가장 뜨는 맛집 TOP 8을 확인해보세요.">
 <meta property="og:image" content="{OG_IMAGE_URL}">
 <meta property="og:type" content="website">
+
+<!-- 검색엔진 소유자 인증용 (Google Search Console / 네이버 서치어드바이저) -->
+{f'<meta name="google-site-verification" content="{GOOGLE_SITE_VERIFICATION}">' if GOOGLE_SITE_VERIFICATION else ''}
+{f'<meta name="naver-site-verification" content="{NAVER_SITE_VERIFICATION}">' if NAVER_SITE_VERIFICATION else ''}
 
 <style>
   body {{
