@@ -739,6 +739,16 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
 {structured_data_json}
 </script>
 
+<!-- PWA(홈 화면에 설치 가능한 웹앱) 설정.
+     apple-touch-icon은 반드시 PNG여야 아이폰에서 정상 표시된다 (SVG는 깨짐). -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#ff5a36">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="맛집트렌드">
+
 <!-- 아래 <style> 블록은 전부 화면 디자인(색상/여백/글씨크기)만 담당한다.
      기능(데이터/로직)과는 무관하니, 디자인만 바꾸고 싶으면 이 안의 숫자/색상 값만
      조정하면 된다. -->
@@ -1281,6 +1291,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       }});
       renderFavoritesTab();
     }})();
+
+    // PWA: 홈 화면에 설치 가능하게 만들어주는 서비스 워커 등록.
+    // (등록 자체는 여기서 하고, 실제 캐싱 없음 여부는 sw.js 파일 내용이 결정한다)
+    if ('serviceWorker' in navigator) {{
+      navigator.serviceWorker.register('./sw.js');
+    }}
   </script>
 </body>
 </html>"""
