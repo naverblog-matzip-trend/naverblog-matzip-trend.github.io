@@ -53,6 +53,14 @@ jobs:
       - name: 저장소 코드 가져오기
         uses: actions/checkout@v6
 
+      # 기록 파일들(streak/지역캐시/후보캐시/트렌드)은 main이 아니라 별도의
+      # "data" 브랜치에 보관한다. 여기서 그 브랜치의 파일들을 작업 폴더로 가져온다.
+      # (data 브랜치가 아직 없으면 - 첫 실행 - 그냥 건너뛰고 새로 시작한다)
+      - name: 기록 파일 불러오기 (data 브랜치)
+        run: |
+          git fetch origin data 2>/dev/null && git checkout FETCH_HEAD -- . \
+            || echo "data 브랜치가 아직 없음 - 이번 실행에서 새로 생성됩니다"
+
       - name: 파이썬 설치
         uses: actions/setup-python@v6
         with:
@@ -64,17 +72,26 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: python fetch_and_build.py
 
-      # "며칠 연속 급상승" 계산에는 어제 기록이, 지역 화제성 캐시(하루 1번만
-      # API 조회하고 나머지 실행은 재사용 - API 호출량 절약)에는 오늘 기록이,
-      # 순위 변동(▲▼)/스파크라인에는 직전 실행 기록이 필요하므로,
-      # 방금 갱신된 기록 파일들을 저장소에 다시 커밋해둔다
-      - name: 기록 파일(streak/지역캐시/트렌드) 저장소에 저장
+      # 갱신된 기록 파일들을 "data" 브랜치에 저장한다.
+      # - main에 커밋하지 않으므로 코드 수정 이력이 데이터 커밋(하루 12개)에
+      #   묻히지 않고 항상 깨끗하게 유지된다
+      # - 매번 새 커밋을 쌓는 게 아니라, 커밋 1개를 강제로 덮어쓰는(force push)
+      #   방식이라 data 브랜치에도 이력이 무한정 쌓이지 않는다 (항상 커밋 1개)
+      # - 참고: 이 워크플로우에는 push 트리거가 없어서(schedule/수동뿐) 어느
+      #   브랜치에 푸시하든 자기 자신을 재트리거할 일은 원래 없다
+      - name: 기록 파일 저장 (data 브랜치, 단일 커밋 덮어쓰기)
         run: |
+          DATA_DIR=$(mktemp -d)
+          for f in streak_history.json region_volume_cache.json candidate_cache.json trend_history.json; do
+            [ -f "$f" ] && cp "$f" "$DATA_DIR/"
+          done
+          cd "$DATA_DIR"
+          git init -q -b data
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add streak_history.json region_volume_cache.json trend_history.json
-          git diff --cached --quiet || git commit -m "chore: 기록 파일 갱신 [skip ci]"
-          git push
+          git add -A
+          git commit -q -m "chore: 기록 파일 갱신 (매 실행마다 이 커밋 하나를 덮어씀)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
 
       # index.html/robots.txt 외에, PWA(홈 화면 설치) 관련 정적 파일들도
       # 같이 배포 폴더에 담는다
