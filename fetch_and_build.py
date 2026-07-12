@@ -1092,7 +1092,7 @@ def render_region_cards(ranking: list) -> str:
         <a class="card" data-mapquery="{region_map_query}" href="{map_url}" target="_blank" rel="noopener">
           <div class="rank">{i}</div>
           <div class="info">
-            <div class="name">{r['region']} <span class="map-icon">📍</span></div>
+            <div class="name">{escape(r['region'])} <span class="map-icon">📍</span></div>
             <div class="region">언급 식당 {r['count']}곳</div>
           </div>
           <div class="stats">
@@ -1115,9 +1115,13 @@ def render_cards(items: list) -> str:
 
     # 이 탭에 실제로 등장하는 카테고리 목록을 모아서 필터 버튼을 만든다
     categories = sorted(set(r.get("category", "기타") for r in items))
+    # 카테고리는 simplify_category()의 고정 화이트리스트("카페"/"한식"/.../"기타")에서만
+    # 나오므로 현재는 escape가 항등 변환이지만, 나중에 simplify_category가 원본 문자열을
+    # 그대로 통과시키는 방향으로 바뀌어도 구멍이 안 생기도록 명시적으로 방어해 둔다
+    # (카드 쪽 data-category와 같은 기준 - 둘 다 escape해야 필터 매칭이 항상 일치)
     category_filter_html = '<button class="cat-btn active" data-cat="전체" onclick="filterByCategory(this)">전체</button>'
     for cat in categories:
-        category_filter_html += f'<button class="cat-btn" data-cat="{cat}" onclick="filterByCategory(this)">{cat}</button>'
+        category_filter_html += f'<button class="cat-btn" data-cat="{escape(cat)}" onclick="filterByCategory(this)">{escape(cat)}</button>'
 
     # 정렬 미니탭: 급상승순(기본)/언급많은순/진짜후기순. 서버를 다시 호출하지 않고
     # 지금 화면에 이미 그려진 카드들을 JS로 재배열하는 방식이라 추가 API 호출이 없다.
@@ -1225,7 +1229,7 @@ def render_cards(items: list) -> str:
         safe_region = escape(r["region"])
 
         rows_html += f"""
-        <a class="card" data-category="{category}" data-rankmetric="{rank_metric_value}"
+        <a class="card" data-category="{escape(category)}" data-rankmetric="{rank_metric_value}"
            data-thisweek="{r['this_week']}" data-genuine="{genuine_for_sort}"
            data-rate="{rate_value}" data-region="{safe_region}"
            data-mapquery="{map_query}"
@@ -2706,7 +2710,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       if (!m.dataset.name) return;
       var text = '🎰 오늘의 랜덤 픽!\\n'
         + '결정이 어렵다면 ' + nowLabel() + ' ' + tabRegionPrefix(m.dataset.tab)
-        + '급상승 맛집으로 뽑은 곳은 바로 **[ ' + m.dataset.name + ' ]** 입니다.\\n\\n'
+        + '급상승 맛집으로 뽑은 곳은 바로 📢 [ ' + m.dataset.name + ' ] 입니다.\\n\\n'
         + '📍 지도 보기: ' + m.dataset.map + '\\n'
         + '⚡ 다른 동네 굴려보기: ' + SITE_URL;
       shareOrCopy(text, btn);
@@ -2858,7 +2862,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       if (!wcState || !wcState.winner) return;
       var text = '🏆 이주의 핫플 월드컵 1위!\\n'
         + '내가 뽑은 ' + nowLabel() + ' ' + tabRegionPrefix(wcState.tab)
-        + '1위 핫플은 **[ ' + wcState.winner.name + ' ]** 입니다.\\n\\n'
+        + '1위 핫플은 👑 [ ' + wcState.winner.name + ' ] 입니다.\\n\\n'
         + '📍 지도 보기: ' + wcState.winner.url + '\\n'
         + '⚡ 다른 동네 굴려보기: ' + SITE_URL;
       shareOrCopy(text, btn);
@@ -2952,7 +2956,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       if (!payState) return;
       var text = '💵 오늘 밥값 낼 사람은 누구?\\n'
         + nowLabel() + ' 급상승 맛집 모임에서 진행한 밥값 쏘기 내기 결과!\\n\\n'
-        + '🎯 당첨자: **[ ' + payState.winners.join(', ') + ' ]** (축하합니다 👏)\\n\\n'
+        + '🎯 당첨자: [ ' + payState.winners.join(', ') + ' ] (축하합니다 👏)\\n\\n'
         + '👥 참여 멤버: ' + payState.all.join(', ') + '\\n\\n'
         + '⚡ 오늘 방문한 핫플 정보 보기: ' + SITE_URL;
       shareOrCopy(text, btn);
