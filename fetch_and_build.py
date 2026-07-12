@@ -43,7 +43,7 @@ import datetime
 import re
 import urllib.request
 import urllib.parse
-from html import unescape
+from html import unescape, escape
 
 try:
     # --- 필수 설정값 (config.py에 반드시 있어야 함) ---------------------------
@@ -154,6 +154,19 @@ try:
     except ImportError:
         HOT_REGION_COUNT = 3  # 후보 지역 중 화제성 상위 몇 개를 골라 추가할지
     try:
+        from config import REGION_VOLUME_CACHE_FILE
+    except ImportError:
+        # 지역 화제성(블로그 총 게시물 수)은 하루 안에 크게 변하지 않으므로,
+        # 하루 1번만 실제 API로 조회하고 나머지 실행(2시간마다 총 12회)에서는
+        # 이 캐시 파일을 재사용한다. -> 후보 지역 100개 기준 하루 약 1,100회의
+        # API 호출을 절약 (streak_history.json처럼 저장소에 커밋해서 유지)
+        REGION_VOLUME_CACHE_FILE = "region_volume_cache.json"
+    try:
+        from config import SITE_URL
+    except ImportError:
+        # sitemap.xml / robots.txt의 Sitemap 안내에 쓰이는 사이트 주소
+        SITE_URL = "https://naverblog-matzip-trend.github.io/"
+    try:
         from config import REGION_QUERY_VARIANTS
     except ImportError:
         # 지역검색 API가 한 번에 최대 5건만 주기 때문에, 검색어를 바꿔가며 여러 번
@@ -168,6 +181,28 @@ except ImportError:
         "config.py가 없습니다. config.example.py를 config.py로 복사한 뒤 "
         "네이버 API 키와 지역 목록을 입력하세요."
     )
+
+KST = datetime.timezone(datetime.timedelta(hours=9))  # 한국 표준시
+
+
+def kst_now() -> datetime.datetime:
+    """현재 시각을 한국시간(KST) 기준으로 반환"""
+    return datetime.datetime.now(KST)
+
+
+def kst_today() -> datetime.date:
+    """
+    오늘 날짜를 한국시간(KST) 기준으로 반환.
+
+    중요: GitHub Actions 서버는 UTC로 돌아가기 때문에 datetime.date.today()를
+    그대로 쓰면 한국시간 00:00~09:00 사이 실행에서는 "어제" 날짜가 나온다.
+    네이버 블로그의 postdate는 한국 날짜 기준이라, 이 상태로 집계하면
+    "오늘(KST) 올라온 게시물"이 전부 미래 날짜로 취급되어 집계에서 빠지는
+    버그가 생긴다 (01:45/03:45/05:45/07:45 KST 실행이 모두 해당).
+    그래서 날짜 계산은 반드시 이 함수를 통해 KST 기준으로 한다.
+    """
+    return kst_now().date()
+
 
 NAVER_API_BASE = "https://openapi.naver.com/v1/search"
 NAVER_DATALAB_URL = "https://openapi.naver.com/v1/datalab/search"  # 검색어 트렌드는 이 별도 주소를 씀
@@ -399,12 +434,42 @@ def resolve_active_regions() -> list:
     if not CANDIDATE_REGIONS:
         return REGIONS
 
-    print("[지역 자동 선정] 후보 지역별 화제성(블로그 총 게시물 수) 조회 중...")
+    # --- 하루 단위 캐시: 지역 화제성은 하루 안에 크게 변하지 않으므로,
+    # 오늘(KST) 이미 조회한 기록이 있으면 API를 다시 부르지 않고 재사용한다.
+    # (2시간마다 실행 기준, 후보 100개 지역이면 하루 약 1,100회 호출 절약)
+    today_str = kst_today().isoformat()
+    cached_volumes = {}
+    if os.path.exists(REGION_VOLUME_CACHE_FILE):
+        try:
+            with open(REGION_VOLUME_CACHE_FILE, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+            if cache.get("date") == today_str:
+                cached_volumes = cache.get("volumes", {})
+        except (json.JSONDecodeError, OSError):
+            cached_volumes = {}  # 캐시가 깨져 있으면 그냥 새로 조회 (에러로 죽지 않게)
+
+    if cached_volumes:
+        print("[지역 자동 선정] 오늘자 화제성 캐시 재사용 (API 호출 생략)")
+    else:
+        print("[지역 자동 선정] 후보 지역별 화제성(블로그 총 게시물 수) 조회 중...")
+
     scored = []
+    volumes_to_save = {}
     for region in CANDIDATE_REGIONS:
-        volume = get_region_volume(region)
-        print(f"  - {region}: {volume}건")
+        if region in cached_volumes:
+            volume = cached_volumes[region]  # 오늘 이미 조회한 값 재사용
+        else:
+            volume = get_region_volume(region)
+            print(f"  - {region}: {volume}건")
+        volumes_to_save[region] = volume
         scored.append((region, volume))
+
+    # 오늘 날짜로 캐시 저장 (내일이 되면 date가 달라져서 자동으로 새로 조회됨)
+    try:
+        with open(REGION_VOLUME_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump({"date": today_str, "volumes": volumes_to_save}, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass  # 캐시 저장 실패는 치명적이지 않으므로 무시하고 계속 진행
     scored.sort(key=lambda x: x[1], reverse=True)
     hot_picks = [r for r, _ in scored[:HOT_REGION_COUNT]]
 
@@ -525,7 +590,7 @@ def apply_search_trends(results: list, today: datetime.date) -> None:
 
 def build_ranking() -> tuple:
     """전 지역을 순회하며 급상승 맛집 TOP N을 계산. (결과 리스트, 협찬/광고 추정 총 제외 건수)를 반환"""
-    today = datetime.date.today()
+    today = kst_today()  # UTC 서버에서 실행돼도 반드시 한국 날짜 기준으로 집계
     results = []
     seen_names = set()
     total_filtered = 0
@@ -727,6 +792,14 @@ def render_cards(items: list) -> str:
         streak = r.get("streak", 0)
         streak_badge_html = f'<span class="streak-badge">🔥 {streak}일 연속</span>' if streak >= STREAK_MIN_DAYS else ""
 
+        # 첫 등장 배지: 지난주 언급이 아예 0건이었다가 이번 주 갑자기 나타난 식당.
+        # 신규 오픈이거나 이제 막 입소문이 시작된 곳일 가능성이 높다.
+        # (별도 저장/조회 없이 이미 있는 last_week 값으로 판별하므로 API 비용 0)
+        new_badge_html = (
+            '<span class="new-badge">✨ 첫 등장</span>'
+            if r["last_week"] == 0 and r["this_week"] > 0 else ""
+        )
+
         # 검색 관심도 배지: DATALAB_ENABLED가 켜져있고, 실제로 검색량도 오르는 중일 때만 표시
         # (search_rising이 None이면 "검색량 자체가 거의 없어 판단 불가"라는 뜻이라 배지를 안 보여준다.
         # False면 "블로그 글은 늘었지만 실제 검색 관심도는 그대로/하락"이라는 뜻이라 이것도 안 보여준다 -
@@ -747,6 +820,12 @@ def render_cards(items: list) -> str:
         # (배지에 보이는 "+N" 숫자는 항상 순수 growth를 그대로 보여준다 - 안 바뀜)
         rank_metric_value = r["score"] if TRUST_WEIGHTED_RANKING else r["growth"]
 
+        # 식당 이름은 API에서 오는 외부 데이터라, strip_tags()가 &amp; 등을 일반
+        # 문자(&)로 풀어놓은 상태다. 그대로 HTML에 넣으면 이름에 & < > " 가 포함된
+        # 식당(예: "밥&술")에서 카드가 깨질 수 있으므로 반드시 이스케이프한다.
+        safe_name = escape(r["name"])
+        safe_region = escape(r["region"])
+
         rows_html += f"""
         <a class="card" data-category="{category}" data-rankmetric="{rank_metric_value}"
            data-thisweek="{r['this_week']}" data-genuine="{genuine_for_sort}"
@@ -757,13 +836,13 @@ def render_cards(items: list) -> str:
                   onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite(this);">♡</button>
           <div class="rank">{i}</div>
           <div class="info">
-            <div class="name">{r['name']} <span class="map-icon">📍</span></div>
-            <div class="region">{r['region']} · {category} {genuine_badge_html}</div>
+            <div class="name">{safe_name} <span class="map-icon">📍</span></div>
+            <div class="region">{safe_region} · {category} {genuine_badge_html}</div>
             {search_badge_html}
           </div>
           <div class="stats">
             <span class="growth">{growth_badge}</span>
-            {streak_badge_html}
+            {streak_badge_html}{new_badge_html}
             <span class="count">이번 주 {r['this_week']}건 · 지난 주 {r['last_week']}건</span>
           </div>
         </a>"""
@@ -793,11 +872,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     여기서는 tabs에 들어있는 만큼 탭 버튼도 자동으로 늘어난다 (코드 수정 불필요).
     total_filtered: 협찬/광고 추정으로 집계에서 제외된 전체 게시물 건수.
     """
-    today_str = datetime.date.today().strftime("%Y년 %m월 %d일")
+    today_str = kst_today().strftime("%Y년 %m월 %d일")  # 헤더 날짜도 한국 날짜 기준
     # "N분 전 갱신" 표시용 생성 시각. GitHub Actions는 UTC로 돌아가므로 KST(UTC+9)로
     # 변환해서 저장하고, 실제 "지금으로부터 몇 분 전"인지는 브라우저에서 JS로 계산한다
     # (그래야 페이지를 열어둔 채로 시간이 지나도 값이 계속 갱신된다).
-    generated_at_kst = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
+    # (datetime.utcnow()는 파이썬에서 사용 중단 예고된 함수라 timezone 방식으로 교체)
+    generated_at_kst = kst_now()
     generated_at_iso = generated_at_kst.strftime("%Y-%m-%dT%H:%M:%S+09:00")
     region_tags = " ".join(f"#{r}" for r in REGIONS)  # 헤더에 보이는 "#강남 #성수..." 문구
     # EXTRA_BADGES 리스트에 있는 문구들을 헤더 배지로 하나씩 만든다 (몇 개든 가능)
@@ -815,7 +895,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     structured_data = {
         "@context": "https://schema.org",
         "@type": "ItemList",
-        "name": "이번 주 블로그 언급 급상승 맛집 TOP 8",
+        "name": f"이번 주 블로그 언급 급상승 맛집 TOP {top_n}",  # config의 TOP_N과 자동 연동
         "itemListElement": [
             {
                 "@type": "ListItem",
@@ -875,12 +955,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>이번 주 블로그 언급 급상승 맛집 TOP 8</title>
+<title>이번 주 블로그 언급 급상승 맛집 TOP {top_n}</title>
 
 <!-- 카톡/문자로 링크 공유 시 미리보기 카드에 쓰이는 정보 -->
-<meta name="description" content="네이버 블로그 언급량 기준, 이번 주 가장 뜨는 맛집 TOP 8을 확인해보세요.">
-<meta property="og:title" content="이번 주 블로그 언급 급상승 맛집 TOP 8">
-<meta property="og:description" content="네이버 블로그 언급량 기준, 이번 주 가장 뜨는 맛집 TOP 8을 확인해보세요.">
+<meta name="description" content="네이버 블로그 언급량 기준, 이번 주 가장 뜨는 맛집 TOP {top_n}을 확인해보세요.">
+<meta property="og:title" content="이번 주 블로그 언급 급상승 맛집 TOP {top_n}">
+<meta property="og:description" content="네이버 블로그 언급량 기준, 이번 주 가장 뜨는 맛집 TOP {top_n}을 확인해보세요.">
 <meta property="og:image" content="{OG_IMAGE_URL}">
 <meta property="og:type" content="website">
 
@@ -1141,6 +1221,15 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     font-weight: 700;
     color: #d9376e;
     background: #fdeef3;
+    padding: 2px 7px;
+    border-radius: 999px;
+    display: inline-block;
+  }}
+  .new-badge {{
+    font-size: 10px;
+    font-weight: 700;
+    color: #6d28d9;
+    background: #f1ebfd;
     padding: 2px 7px;
     border-radius: 999px;
     display: inline-block;
@@ -1640,7 +1729,7 @@ if __name__ == "__main__":
     all_results, total_filtered = build_ranking()
 
     # 2-1) (선택 기능, 기본 꺼짐) 상위 몇 개 식당만 데이터랩으로 실제 검색 관심도 추가 확인
-    apply_search_trends(all_results, datetime.date.today())
+    apply_search_trends(all_results, kst_today())
 
     # 3) 식당 랭킹과는 별개로, 지역 단위 랭킹도 따로 집계
     region_ranking = build_region_ranking(all_results)
@@ -1656,6 +1745,24 @@ if __name__ == "__main__":
         json.dump(all_results, f, ensure_ascii=False, indent=2)
 
     # 검색로봇 접근 허용 안내 파일 생성 (네이버 서치어드바이저 robots.txt 경고 해소용)
+    # Sitemap 줄을 함께 넣어두면 검색엔진이 사이트맵 위치를 바로 찾을 수 있다
     with open("robots.txt", "w", encoding="utf-8") as f:
-        f.write("User-agent: *\nAllow: /\n")
+        f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL.rstrip('/')}/sitemap.xml\n")
     print("완료: robots.txt 생성됨")
+
+    # sitemap.xml 생성 (SEO): 페이지가 index.html 하나뿐이라 항목도 하나지만,
+    # lastmod(마지막 갱신 시각)를 매번 새로 적어주는 것이 핵심이다 - 검색엔진에게
+    # "이 페이지는 계속 갱신되는 살아있는 페이지"라는 신호를 줘서 재수집을 유도한다.
+    lastmod = kst_now().strftime("%Y-%m-%dT%H:%M:%S+09:00")
+    sitemap = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"  <url>\n    <loc>{SITE_URL}</loc>\n"
+        f"    <lastmod>{lastmod}</lastmod>\n"
+        "    <changefreq>hourly</changefreq>\n"
+        "  </url>\n"
+        "</urlset>\n"
+    )
+    with open("sitemap.xml", "w", encoding="utf-8") as f:
+        f.write(sitemap)
+    print("완료: sitemap.xml 생성됨")
