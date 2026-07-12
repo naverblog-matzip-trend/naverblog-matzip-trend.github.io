@@ -162,6 +162,14 @@ try:
         # API 호출을 절약 (streak_history.json처럼 저장소에 커밋해서 유지)
         REGION_VOLUME_CACHE_FILE = "region_volume_cache.json"
     try:
+        from config import CANDIDATE_CACHE_FILE
+    except ImportError:
+        # 지역별 후보 식당 목록은 하루 안에 크게 바뀌지 않으므로, 하루 1번만
+        # 실제 지역검색 API(local.json)로 수집하고 나머지 실행(2시간마다 총 12회)
+        # 에서는 이 캐시를 재사용한다. -> 지역 15개 × 검색어 10개 기준
+        # 하루 약 1,650회의 API 호출 절약 (region_volume_cache와 같은 패턴)
+        CANDIDATE_CACHE_FILE = "candidate_cache.json"
+    try:
         from config import TREND_HISTORY_FILE
     except ImportError:
         # 순위 변동(▲▼ 화살표)과 스파크라인(언급량 추세 미니그래프) 계산에 쓰이는
@@ -291,7 +299,30 @@ def get_candidate_restaurants(region: str, target_count: int = 20) -> list:
     target_count(=DISPLAY_PER_REGION)에 도달하면 그만 호출한다.
 
     예: get_candidate_restaurants("강남") -> [{"name": "OO식당", "category": "한식"}, ...]
+
+    하루 단위 캐시: "{지역} 맛집" 검색 결과 상위 목록은 2시간 사이에 거의 바뀌지
+    않으므로, 오늘(KST) 이미 수집한 지역이면 API를 다시 부르지 않고 캐시를
+    재사용한다. sort=random이라 "그날의 첫 실행"이 그날 하루의 후보 구성을
+    결정하게 되는데, 날짜가 바뀌면 캐시가 새로 만들어지므로 날마다 다양성은
+    그대로 유지된다. (지역별 블로그 언급량 집계는 캐시와 무관하게 매 실행마다
+    새로 계산되므로, 2시간마다 갱신되는 순위의 신선도에는 영향이 없다)
     """
+    # --- 캐시 확인: 오늘 이미 이 지역 후보를 수집했으면 그대로 재사용 ---------
+    today_str = kst_today().isoformat()
+    cache = {}
+    if os.path.exists(CANDIDATE_CACHE_FILE):
+        try:
+            with open(CANDIDATE_CACHE_FILE, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            cache = {}  # 캐시가 깨져 있으면 새로 수집 (에러로 죽지 않게)
+    if cache.get("date") != today_str:
+        cache = {"date": today_str, "regions": {}}  # 날짜가 바뀌면 캐시 초기화
+    if region in cache.get("regions", {}):
+        cached = cache["regions"][region]
+        print(f"    (오늘자 후보 캐시 재사용: {len(cached)}개, API 호출 생략)")
+        return cached[:target_count]
+
     results = []
     seen = set()
     for variant in REGION_QUERY_VARIANTS:
@@ -308,6 +339,14 @@ def get_candidate_restaurants(region: str, target_count: int = 20) -> list:
                 seen.add(name)
                 category = simplify_category(item.get("category", ""))
                 results.append({"name": name, "category": category})
+
+    # 오늘 날짜로 캐시에 저장 (내일이 되면 date가 달라져서 자동으로 새로 수집됨)
+    cache.setdefault("regions", {})[region] = results
+    try:
+        with open(CANDIDATE_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass  # 캐시 저장 실패는 치명적이지 않으므로 무시하고 계속
     return results
 
 
