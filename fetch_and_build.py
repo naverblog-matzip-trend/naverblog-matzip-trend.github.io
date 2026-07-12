@@ -162,6 +162,13 @@ try:
         # API 호출을 절약 (streak_history.json처럼 저장소에 커밋해서 유지)
         REGION_VOLUME_CACHE_FILE = "region_volume_cache.json"
     try:
+        from config import TREND_HISTORY_FILE
+    except ImportError:
+        # 순위 변동(▲▼ 화살표)과 스파크라인(언급량 추세 미니그래프) 계산에 쓰이는
+        # 실행 이력 파일. streak_history.json과 같은 방식으로 저장소에 커밋해서
+        # 실행 사이에 기록이 유지된다.
+        TREND_HISTORY_FILE = "trend_history.json"
+    try:
         from config import SITE_URL
     except ImportError:
         # sitemap.xml / robots.txt의 Sitemap 안내에 쓰이는 사이트 주소
@@ -324,7 +331,7 @@ def is_genuine_post(title: str, description: str) -> bool:
     return any(keyword in text for keyword in GENUINE_KEYWORDS)
 
 
-def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tuple:
+def get_weekly_mention_counts(restaurant_name: str, today: datetime.date, region: str = "") -> tuple:
     """
     블로그검색 API로 특정 식당의 '이번 주'/'지난 주' 언급 수를 계산한다.
     postdate(YYYYMMDD) 필드를 기준으로 집계.
@@ -332,11 +339,21 @@ def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tup
     (제외되지 않은 게시물 중에서는 "내돈내산" 계열 문구 비율도 함께 집계한다
     -> get_genuine_ratio()에서 이 값으로 "내돈내산 지수"를 계산함)
 
+    중요(체인점 오염 방지): 검색어를 식당 이름만으로 하면 "정돈"처럼 전국에
+    분점이 있는 이름은 홍대점/대학로점 등 모든 지점의 글이 한 지역 점수로
+    합산되어, 유명 프랜차이즈가 지역과 무관하게 순위를 독점하는 왜곡이 생긴다.
+    그래서 region이 주어지면 "{지역} {이름}"으로 검색해 그 지역과 함께 언급된
+    글만 집계한다. (네이버 블로그검색은 본문 전체를 대상으로 하므로, 글 어딘가에
+    지역명이 등장하면 잡힌다. 지역명을 안 쓴 진짜 후기도 일부 빠지는 트레이드오프가
+    있지만, 모든 식당에 같은 기준이 적용되므로 순위 비교의 공정성은 유지된다.
+    전체적으로 집계 수치 자체는 이전보다 낮아지는 게 정상이다.)
+
     API 한 번 호출은 최대 100건까지만 주므로, MAX_BLOG_RESULTS까지 여러 번
     페이지를 넘겨가며 가져온다(start 파라미터 사용). 최신순 정렬이므로
     지난 주 시작일보다 오래된 게시물이 나오면 그 지점에서 바로 중단한다
     (게시물이 적은 대부분의 식당은 1번 호출만으로 끝나서 API 낭비가 없다).
     """
+    query = f"{region} {restaurant_name}".strip()  # 지역명 결합으로 검색 범위를 좁힌다
     # "이번 주"="오늘부터 7일 전까지", "지난 주"="8~14일 전까지" - 달력 기준이 아니라
     # 실행하는 날짜(today) 기준으로 매번 새로 계산되는 롤링(rolling) 방식이다.
     # 그래서 이 스크립트를 매일 실행하면, 매일 최신 7일 트렌드가 갱신된다.
@@ -352,7 +369,7 @@ def get_weekly_mention_counts(restaurant_name: str, today: datetime.date) -> tup
     start = 1
     while start <= MAX_BLOG_RESULTS:
         data = _naver_get("blog.json", {
-            "query": restaurant_name,
+            "query": query,  # "{지역} {이름}" - 체인점 오염 방지 (위 docstring 참고)
             "display": 100,
             "start": start,
             "sort": "date",  # 최신순 정렬 - 오래된 글이 나오면 바로 멈출 수 있어서 효율적
@@ -536,6 +553,68 @@ def apply_streaks(results: list, today: datetime.date) -> None:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 
+def apply_trend_history(results: list, today: datetime.date) -> None:
+    """
+    직전 실행과 비교한 "순위 변동"(rank_delta)과, 실행마다의 이번 주 언급 수를
+    누적한 "추세 데이터"(spark_points)를 results의 각 항목에 채워 넣는다.
+
+    기록은 TREND_HISTORY_FILE(기본 trend_history.json)에 저장하며, 구조는:
+      {
+        "prev_ranks": {"식당명": 3, ...},     # 직전 실행에서의 전체 순위
+        "mentions": {"식당명": {"points": [["2026-07-12T09:45", 12], ...],
+                                 "last": "2026-07-12"}, ...}
+      }
+
+    - rank_delta: (직전 순위 - 현재 순위). 양수=상승(▲), 음수=하락(▼), 0=유지.
+      직전 실행에 없던 식당은 None (화살표 표시 안 함 - "첫 등장" 배지가 대신함).
+    - spark_points: 실행할 때마다 이번 주 언급 수를 한 점씩 쌓은 목록.
+      2시간마다 실행 기준 최근 48개(약 4일치)만 유지해 파일이 무한정 안 커지게 한다.
+      점이 2개 이상 모이면 카드에 미니 추세 그래프(스파크라인)가 그려진다.
+    - streak처럼 하루 여러 번 실행돼도 안전하다: 순위 비교는 "직전 실행"과 하는
+      것이 의도된 동작이고(2시간 사이 움직임을 보여줌), 언급 추세도 실행마다
+      한 점씩 쌓이는 게 맞는 동작이라 별도의 같은 날 보정이 필요 없다.
+    """
+    history = {}
+    if os.path.exists(TREND_HISTORY_FILE):
+        try:
+            with open(TREND_HISTORY_FILE, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            history = {}  # 파일이 깨져 있으면 새로 시작 (에러로 죽지 않게)
+
+    prev_ranks = history.get("prev_ranks", {})
+    mentions = history.get("mentions", {})
+    now_label = kst_now().strftime("%Y-%m-%dT%H:%M")
+
+    for idx, r in enumerate(results, start=1):
+        name = r["name"]
+
+        # 순위 변동: 직전 실행 순위와 비교 (기록이 없으면 None -> 화살표 없음)
+        prev = prev_ranks.get(name)
+        r["rank_delta"] = (prev - idx) if isinstance(prev, int) else None
+
+        # 언급량 추세: 이번 실행의 이번 주 언급 수를 한 점 추가
+        entry = mentions.get(name, {"points": []})
+        entry["points"].append([now_label, r["this_week"]])
+        entry["points"] = entry["points"][-48:]  # 최근 48회(약 4일치)만 유지
+        entry["last"] = today.isoformat()
+        mentions[name] = entry
+        r["spark_points"] = [p[1] for p in entry["points"]]
+
+    # 14일 넘게 갱신 안 된 식당 기록은 정리 (파일 크기 관리)
+    cutoff = (today - datetime.timedelta(days=14)).isoformat()
+    mentions = {n: v for n, v in mentions.items() if v.get("last", "") >= cutoff}
+
+    # 이번 실행의 순위를 "직전 순위"로 저장 -> 다음 실행 때 비교 기준이 됨
+    new_ranks = {r["name"]: i for i, r in enumerate(results, start=1)}
+    try:
+        with open(TREND_HISTORY_FILE, "w", encoding="utf-8") as f:
+            json.dump({"prev_ranks": new_ranks, "mentions": mentions}, f,
+                      ensure_ascii=False, indent=2)
+    except OSError:
+        pass  # 기록 저장 실패는 치명적이지 않으므로 무시하고 계속
+
+
 def apply_search_trends(results: list, today: datetime.date) -> None:
     """
     상위 DATALAB_MAX_ITEMS개 식당에 한해, 데이터랩(검색어 트렌드) API로
@@ -556,6 +635,9 @@ def apply_search_trends(results: list, today: datetime.date) -> None:
     # 5개씩 묶어서 처리 (데이터랩 API 한 번 호출당 최대 5개 키워드 그룹 허용)
     for i in range(0, len(targets), 5):
         batch = targets[i:i + 5]
+        # 참고: 블로그 집계와 달리 데이터랩은 지역명을 결합하지 않는다.
+        # 사람들이 검색창에 실제로 치는 건 대부분 식당 이름 그 자체라서,
+        # "{지역} {이름}"으로 좁히면 검색량이 0에 수렴해 전부 "데이터 부족"이 된다.
         keyword_groups = [{"groupName": r["name"], "keywords": [r["name"]]} for r in batch]
         try:
             data = _naver_datalab_post({
@@ -606,7 +688,7 @@ def build_ranking() -> tuple:
                 continue  # 이미 다른 지역에서 나왔던 식당이면 중복 집계 방지
             seen_names.add(name)
 
-            this_week, last_week, filtered, genuine = get_weekly_mention_counts(name, today)
+            this_week, last_week, filtered, genuine = get_weekly_mention_counts(name, today, region)
             total_filtered += filtered
             if filtered:
                 print(f"    (협찬/광고 추정 {filtered}건 제외)")
@@ -657,6 +739,10 @@ def build_ranking() -> tuple:
     # 다음 실행 때도 이어서 셀 수 있게 한다 - GitHub Actions에서는 이 파일을
     # 저장소에 다시 커밋해야 실행 간에 기록이 유지된다)
     apply_streaks(results, today)
+
+    # 직전 실행 대비 순위 변동(▲▼)과 언급량 추세(스파크라인) 데이터 계산
+    # (trend_history.json에 기록 - GitHub Actions에서는 이 파일도 커밋되어야 유지됨)
+    apply_trend_history(results, today)
 
     print(f"\n총 협찬/광고 추정 제외 건수: {total_filtered}건")
     return results, total_filtered  # 자르지 않고 전체 반환 - 지역별 탭 계산에 필요
@@ -715,6 +801,30 @@ def naver_map_link(name: str, region: str) -> str:
     return f"https://map.naver.com/p/search/{query}"
 
 
+def render_sparkline(points) -> str:
+    """
+    실행 이력(spark_points)으로 작은 추세 그래프(SVG)를 만든다.
+    점이 2개 미만이면(첫 실행 직후 등) 아직 추세랄 게 없으므로 빈 문자열 반환.
+    stroke에 currentColor를 써서 CSS(.spark의 color)로 색을 제어한다
+    -> 다크모드에서도 CSS만으로 색이 자동 전환된다.
+    """
+    if not points or len(points) < 2:
+        return ""
+    w, h, pad = 64, 20, 2
+    mn, mx = min(points), max(points)
+    span = (mx - mn) or 1  # 전부 같은 값이면 0으로 나누지 않도록 방어
+    step = (w - 2 * pad) / (len(points) - 1)
+    coords = " ".join(
+        f"{pad + i * step:.1f},{h - pad - (v - mn) / span * (h - 2 * pad):.1f}"
+        for i, v in enumerate(points)
+    )
+    return (
+        f'<svg class="spark" width="{w}" height="{h}" viewBox="0 0 {w} {h}" aria-hidden="true">'
+        f'<polyline points="{coords}" fill="none" stroke="currentColor" '
+        f'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+    )
+
+
 def render_region_cards(ranking: list) -> str:
     """
     '지역랭킹' 탭 전용 카드 렌더러. render_cards()와 모양은 비슷하지만
@@ -725,9 +835,10 @@ def render_region_cards(ranking: list) -> str:
     rows_html = ""
     for i, r in enumerate(ranking, start=1):
         growth_badge = f"+{r['total_growth']}" if r["total_growth"] > 0 else str(r["total_growth"])
-        map_url = f"https://map.naver.com/p/search/{urllib.parse.quote(r['region'] + ' 맛집')}"
+        region_map_query = urllib.parse.quote(r["region"] + " 맛집")
+        map_url = f"https://map.naver.com/p/search/{region_map_query}"
         rows_html += f"""
-        <a class="card" href="{map_url}" target="_blank" rel="noopener">
+        <a class="card" data-mapquery="{region_map_query}" href="{map_url}" target="_blank" rel="noopener">
           <div class="rank">{i}</div>
           <div class="info">
             <div class="name">{r['region']} <span class="map-icon">📍</span></div>
@@ -771,6 +882,9 @@ def render_cards(items: list) -> str:
     for i, r in enumerate(items, start=1):
         growth_badge = f"+{r['growth']}" if r["growth"] > 0 else str(r["growth"])
         map_url = naver_map_link(r["name"], r["region"])
+        # 모바일에서 네이버 지도 "앱"을 바로 열기 위한 검색어 (nmap:// 스키마용).
+        # 웹 링크(map_url)와 같은 검색어를 쓰되, 스키마 URL은 JS에서 조립한다.
+        map_query = urllib.parse.quote(f"{r['name']} {r['region']}")
         category = r.get("category", "기타")
         fav_key = urllib.parse.quote(r["name"])  # localStorage 키에 안전하게 쓰기 위해 인코딩
         share_name = urllib.parse.quote(r["name"])  # 공유 버튼에서도 같은 방식으로 이름을 안전하게 담아둔다
@@ -799,6 +913,23 @@ def render_cards(items: list) -> str:
             '<span class="new-badge">✨ 첫 등장</span>'
             if r["last_week"] == 0 and r["this_week"] > 0 else ""
         )
+
+        # 순위 변동 화살표: 직전 실행(2시간 전)의 전체 순위와 비교.
+        # 주의: 이 화살표는 서버가 계산한 "전체 급상승 순위" 기준이라, 화면에서
+        # 정렬/필터를 바꿔도 값이 바뀌지 않는다 (그게 의도 - 시간에 따른 변동을
+        # 보여주는 것이지, 지금 화면 배치를 보여주는 게 아님).
+        delta = r.get("rank_delta")
+        if delta is None:
+            delta_html = ""  # 직전 실행에 없던 식당 -> 비교 기준이 없어 표시 안 함
+        elif delta > 0:
+            delta_html = f'<span class="rank-delta delta-up">▲{delta}</span>'
+        elif delta < 0:
+            delta_html = f'<span class="rank-delta delta-down">▼{-delta}</span>'
+        else:
+            delta_html = '<span class="rank-delta delta-same">-</span>'
+
+        # 언급량 추세 미니그래프 (기록이 2회 이상 쌓인 식당만 그려짐)
+        spark_html = render_sparkline(r.get("spark_points"))
 
         # 검색 관심도 배지: DATALAB_ENABLED가 켜져있고, 실제로 검색량도 오르는 중일 때만 표시
         # (search_rising이 None이면 "검색량 자체가 거의 없어 판단 불가"라는 뜻이라 배지를 안 보여준다.
@@ -829,12 +960,13 @@ def render_cards(items: list) -> str:
         rows_html += f"""
         <a class="card" data-category="{category}" data-rankmetric="{rank_metric_value}"
            data-thisweek="{r['this_week']}" data-genuine="{genuine_for_sort}"
+           data-mapquery="{map_query}"
            href="{map_url}" target="_blank" rel="noopener">
           <button class="share-btn" data-name="{share_name}" data-map="{map_url}"
                   onclick="event.preventDefault(); event.stopPropagation(); shareCard(this);">🔗</button>
           <button class="fav-btn" data-key="{fav_key}"
                   onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite(this);">♡</button>
-          <div class="rank">{i}</div>
+          <div class="rank"><span class="rank-num">{i}</span>{delta_html}</div>
           <div class="info">
             <div class="name">{safe_name} <span class="map-icon">📍</span></div>
             <div class="region">{safe_region} · {category} {genuine_badge_html}</div>
@@ -844,6 +976,7 @@ def render_cards(items: list) -> str:
             <span class="growth">{growth_badge}</span>
             {streak_badge_html}{new_badge_html}
             <span class="count">이번 주 {r['this_week']}건 · 지난 주 {r['last_week']}건</span>
+            {spark_html}
           </div>
         </a>"""
 
@@ -1183,6 +1316,27 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     font-weight: 800;
     color: #ff5a36;
     min-width: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+  }}
+  .rank-delta {{
+    font-size: 9px;
+    font-weight: 700;
+  }}
+  .delta-up {{
+    color: #e03131;
+  }}
+  .delta-down {{
+    color: #4c6ef5;
+  }}
+  .delta-same {{
+    color: #ccc;
+  }}
+  .spark {{
+    color: #ffb09c;
+    display: block;
   }}
   .info {{
     flex: 1;
@@ -1306,6 +1460,119 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     color: #aaa;
   }}
 
+  /* --- 다크모드 전환 버튼 (헤더 오른쪽 위 고정 - 지역 탭들과 분리된 독립 위치) --- */
+  .theme-toggle {{
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.25);
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }}
+
+  /* --- 다크모드: body에 dark 클래스가 붙으면 아래 색상들로 덮어씌워진다.
+       (헤더의 그라데이션과 포인트 주황색은 브랜드 색이라 그대로 유지) --- */
+  body {{
+    transition: background 0.25s, color 0.25s;
+  }}
+  body.dark {{
+    background: #14161b;
+    color: #e8e8ea;
+  }}
+  body.dark .card {{
+    background: #1e2129;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }}
+  body.dark .card:hover {{
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }}
+  body.dark .tab-btn {{
+    background: #1e2129;
+    color: #9aa0ab;
+  }}
+  body.dark .tab-btn.active {{
+    background: #ff5a36;
+    color: white;
+  }}
+  body.dark .cat-btn {{
+    background: #2a2e38;
+    color: #9aa0ab;
+  }}
+  body.dark .cat-btn.active {{
+    background: #e8e8ea;
+    color: #14161b;
+  }}
+  body.dark .sort-btn {{
+    background: #1e2129;
+    border-color: #2a2e38;
+    color: #9aa0ab;
+  }}
+  body.dark .sort-btn.active {{
+    background: #32201a;
+    border-color: #ff5a36;
+    color: #ff8a66;
+  }}
+  body.dark .region,
+  body.dark .count {{
+    color: #8a8f99;
+  }}
+  body.dark .filter-note {{
+    color: #666;
+  }}
+  body.dark .fav-btn,
+  body.dark .share-btn {{
+    color: #555c68;
+  }}
+  body.dark .fav-btn.active {{
+    color: #ff5a36;
+  }}
+  body.dark .delta-same {{
+    color: #555c68;
+  }}
+  body.dark .spark {{
+    color: #ff8a66;
+  }}
+  body.dark .genuine-high {{
+    background: rgba(15,138,79,0.2);
+    color: #5ad08f;
+  }}
+  body.dark .genuine-mid {{
+    background: rgba(184,114,10,0.2);
+    color: #e6a23c;
+  }}
+  body.dark .genuine-low {{
+    background: rgba(201,42,42,0.2);
+    color: #ff7b7b;
+  }}
+  body.dark .streak-badge {{
+    background: rgba(217,55,110,0.2);
+  }}
+  body.dark .new-badge {{
+    background: rgba(109,40,217,0.25);
+    color: #b79df5;
+  }}
+  body.dark .search-badge {{
+    background: rgba(15,110,156,0.22);
+    color: #6cc4ee;
+  }}
+  body.dark .pick-modal-box {{
+    background: #1e2129;
+    color: #e8e8ea;
+  }}
+  body.dark .pick-modal-close-btn {{
+    background: #2a2e38;
+    color: #9aa0ab;
+  }}
+
   /* --- 랜덤 뽑기 버튼 & 슬롯머신 애니메이션 & 결과 모달 --- */
   .pick-btn {{
     width: 100%;
@@ -1394,6 +1661,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
 <body>
   <!-- 상단 그라데이션 헤더 영역 (제목, 배지, 지역 태그, 날짜) -->
   <div class="hero" data-generated-at="{generated_at_iso}">
+    <!-- 다크모드 전환 버튼: 지역 탭 줄과 분리된 고정 위치 (항상 같은 자리) -->
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="다크모드 전환">🌙</button>
     <div class="hero-icon">
       <svg width="160" height="160" fill="currentColor" viewBox="0 0 24 24">
         <path d="M17.66 11.57c-.77-3.95-2.85-6.86-5.27-9.4c-.25-.26-.68-.15-.77.19-.53 2.11-.96 4.98-2.5 7-1.72 2.25-3.68 3.19-4.43 5.92C3.96 18.02 6.07 22 10 22c4.83 0 8.64-4.08 7.66-10.43z"/>
@@ -1496,7 +1765,9 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     function renumberVisibleRanks(panel) {{
       var visible = Array.prototype.slice.call(panel.querySelectorAll('.card-list .card:not(.cat-hidden)'));
       visible.forEach(function(card, idx) {{
-        var rankEl = card.querySelector('.rank');
+        // .rank 전체의 textContent를 덮어쓰면 안에 있는 순위변동 화살표(▲▼)까지
+        // 지워지므로, 숫자만 담고 있는 .rank-num 부분만 갱신한다
+        var rankEl = card.querySelector('.rank-num') || card.querySelector('.rank');
         if (rankEl) rankEl.textContent = idx + 1;
       }});
     }}
@@ -1672,6 +1943,80 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
         }}
       }});
       renderFavoritesTab();
+    }})();
+
+    // --- 모바일에서 네이버 지도 "앱" 바로 열기 ---------------------------------
+    // 카톡/인스타 인앱 브라우저에서 map.naver.com 웹 링크를 열면 로그인/앱설치
+    // 유도 화면에 막히는 경우가 많다. 그래서 모바일 기기에서는 네이버 지도 앱을
+    // 직접 실행하는 스키마(nmap://)를 먼저 시도하고, 일정 시간 안에 앱이 안 열리면
+    // (앱 미설치 or 인앱 브라우저가 스키마 차단) 기존 웹 지도로 자동 폴백한다.
+    // 데스크톱은 기존 동작(새 탭에서 웹 지도) 그대로 유지된다.
+    function isMobileDevice() {{
+      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }}
+
+    function openInNaverMapApp(card) {{
+      var query = card.dataset.mapquery;
+      var webUrl = card.href;
+      if (!query) {{
+        window.open(webUrl, '_blank');  // 검색어 정보가 없으면 그냥 웹 지도로
+        return;
+      }}
+      // appname은 네이버 지도 앱 스키마 규격상 호출한 서비스 주소를 담는 파라미터 (iOS 필수)
+      var scheme = 'nmap://search?query=' + query
+        + '&appname=' + encodeURIComponent('{SITE_URL}');
+
+      // 1.5초 안에 앱이 열려서 화면이 백그라운드로 전환되면 폴백을 취소하고,
+      // 아무 일도 안 일어나면(앱 없음/스키마 차단) 웹 지도로 이동한다
+      var fallbackTimer = setTimeout(function() {{
+        window.location.href = webUrl;
+      }}, 1500);
+      var cancelFallback = function() {{
+        if (document.hidden) {{
+          clearTimeout(fallbackTimer);
+          document.removeEventListener('visibilitychange', cancelFallback);
+        }}
+      }};
+      document.addEventListener('visibilitychange', cancelFallback);
+      window.location.href = scheme;
+    }}
+
+    // 이벤트 위임: 즐겨찾기 탭의 복제 카드처럼 나중에 생기는 카드에서도 동작하도록
+    // 개별 카드가 아니라 문서 전체에서 클릭을 받아 처리한다
+    document.addEventListener('click', function(e) {{
+      var card = e.target.closest ? e.target.closest('a.card') : null;
+      if (!card || !card.href || card.href.indexOf('map.naver.com') === -1) return;
+      if (!isMobileDevice()) return;  // 데스크톱은 기존 새 탭 동작 유지
+      e.preventDefault();
+      openInNaverMapApp(card);
+    }});
+
+    // --- 다크모드: 헤더의 🌙/☀️ 버튼으로 전환, 선택은 localStorage에 저장되어
+    // 다음 방문 때도 유지된다. 저장된 선택이 없으면(첫 방문) 기기의 시스템 설정
+    // (다크모드 사용 중인지)을 초기값으로 따라간다.
+    function applyTheme(theme) {{
+      var dark = theme === 'dark';
+      document.body.classList.toggle('dark', dark);
+      var btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = dark ? '☀️' : '🌙';  // 버튼엔 "누르면 바뀔 모드"의 반대 아이콘
+    }}
+
+    function toggleTheme() {{
+      var next = document.body.classList.contains('dark') ? 'light' : 'dark';
+      try {{
+        localStorage.setItem('naver_trend_theme', next);
+      }} catch (e) {{ /* 사생활 보호 모드 등에서 저장 실패해도 전환 자체는 되게 */ }}
+      applyTheme(next);
+    }}
+
+    (function initTheme() {{
+      var saved = null;
+      try {{
+        saved = localStorage.getItem('naver_trend_theme');
+      }} catch (e) {{ saved = null; }}
+      var theme = saved || (window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      applyTheme(theme);
     }})();
 
     // "N분 전 갱신" 표시: 데이터가 실제로 만들어진 시각(data-generated-at)과
