@@ -1388,6 +1388,18 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       document.querySelectorAll('.card.picking').forEach(function(c) {{ c.classList.remove('picking'); }});
     }}
 
+    // --- 순위 배지(①②③...) 재계산: 카드 안의 "N" 숫자는 처음 만들어질 때 값으로
+    // 고정되어 있어서, 정렬이나 카테고리 필터로 화면 순서가 바뀌어도 숫자는 그대로였다.
+    // 정렬/필터를 적용할 때마다 이 함수를 호출해서, 지금 실제로 보이는 순서 그대로
+    // 1번부터 다시 매겨준다 (공유 버튼이 계산하는 순위와도 항상 일치하게 됨).
+    function renumberVisibleRanks(panel) {{
+      var visible = Array.prototype.slice.call(panel.querySelectorAll('.card-list .card:not(.cat-hidden)'));
+      visible.forEach(function(card, idx) {{
+        var rankEl = card.querySelector('.rank');
+        if (rankEl) rankEl.textContent = idx + 1;
+      }});
+    }}
+
     // --- 카테고리 필터: 버튼 클릭 시 그 탭 안에서 해당 카테고리만 보이게 전환 ---
     function filterByCategory(btn) {{
       var filterBar = btn.closest('.cat-filter');
@@ -1404,6 +1416,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
           card.classList.add('cat-hidden');
         }}
       }});
+
+      renumberVisibleRanks(panel);
     }}
 
     // --- 정렬 미니탭: 급상승순/언급많은순/진짜후기순 - 서버 재호출 없이 이미 그려진
@@ -1411,7 +1425,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     function sortByMetric(btn) {{
       var bar = btn.closest('.sort-bar');
       var panel = btn.closest('.tab-panel');
-      var metric = btn.dataset.sort; // 'growth' | 'thisweek' | 'genuine'
+      var metric = btn.dataset.sort; // 'rankmetric' | 'thisweek' | 'genuine'
 
       bar.querySelectorAll('.sort-btn').forEach(function(b) {{ b.classList.remove('active'); }});
       btn.classList.add('active');
@@ -1426,6 +1440,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       if (container) {{
         list.forEach(function(card) {{ container.appendChild(card); }});
       }}
+
+      renumberVisibleRanks(panel);
     }}
 
     // --- 공유 버튼: "{{탭 이름}} {{정렬기준}}순 {{순위}}위 - {{이름}}\\n{{지도링크}}" 형태로 클립보드에 복사.
