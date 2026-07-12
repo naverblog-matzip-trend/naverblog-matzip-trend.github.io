@@ -1314,7 +1314,8 @@ def build_ticker_slides(tabs: dict, all_results=None) -> list:
       2순위: 1위는 양수인데 2위 지역이 없음 -> 단독 독점 문구
       3순위: 2위/1위 비율이 0.90 이상 -> 초박빙 문구
       4순위: 그 외 -> 일반 격차 문구
-    Slide 2 - 급상승 1위 식당
+    Slide 2 - 급상승 1위 식당 (growth > 0인 매장이 1곳도 없으면 슬라이드 제외
+              - 전국 하락장에서 하락 매장이 "급상승 1위"로 뜨는 모순 방지)
     Slide 3 - 내돈내산 지수 최고 식당 (유효 지수 보유 식당이 1곳도 없으면 슬라이드 제외)
     Slide 4 - 연속 상승(스테디) 식당 (streak >= STREAK_MIN_DAYS 매장 있을 때만 포함)
     """
@@ -1342,7 +1343,21 @@ def build_ticker_slides(tabs: dict, all_results=None) -> list:
                 slides.append(f"🔥 이번 주 {escape(top['region'])}, {escape(second['region'])}보다 {diff}건 차로 화제성 1위!")
 
     if pool:
-        slides.append(f"🚀 이번 주 언급 급상승 1위 : {escape(pool[0]['name'])}")
+        # 급상승 1위(슬라이드 2)는 실제로 "상승 중"인 매장만 자격이 있다.
+        # 전국 전멸 상황(명절/서버 점검 등으로 모든 매장이 하락)에서는 pool[0]이
+        # "가장 덜 하락한" 매장인데, 필터 없이 쓰면 그 하락 매장이 "급상승 1위"로
+        # 박제되는 모순이 생긴다 (그 상황에서 전체 탭은 growth<=0 필터로 비어
+        # 있으므로, 탭에 없는 매장이 티커에만 뜨는 불일치이기도 하다).
+        # 상승 매장이 하나도 없으면 이 슬라이드는 통째로 생략 - 슬라이드 1의
+        # 침체 문구가 상황 설명을 대신한다.
+        # 주의: 필터는 이 슬라이드에만 건다. 슬라이드 3(내돈내산 1위)은 급상승이
+        # 아니라 신뢰도 지표라 하락 매장도 자격이 있고(지역 탭에는 하락 매장의
+        # 지수 배지가 계속 표시되므로, 여기서 빼면 화면 배지와 티커 1위가 어긋나는
+        # 새 모순이 생긴다), 슬라이드 4는 apply_streaks()가 growth<=0이면 streak를
+        # 0으로 리셋해 구조적으로 상승 매장만 남으므로 별도 필터가 필요 없다.
+        risers = [r for r in pool if r["growth"] > 0]
+        if risers:
+            slides.append(f"🚀 이번 주 언급 급상승 1위 : {escape(risers[0]['name'])}")
 
         genuines = [r for r in pool if r.get("genuine_ratio") is not None]
         if genuines:  # 유효 지수 보유 식당이 없으면 이 슬라이드는 통째로 제외
