@@ -1343,7 +1343,13 @@ def render_cards(items: list) -> str:
         return '<p style="text-align:center;color:#999;padding:20px 0;">데이터가 없습니다.</p>'
 
     # 이 탭에 실제로 등장하는 카테고리 목록을 모아서 필터 버튼을 만든다
-    categories = sorted(set(r.get("category", "기타") for r in items))
+    # 카테고리 필터 순서: 가나다순이 아니라 음식점 관습 순서로 고정한다.
+    # 목록에 없는 돌발 카테고리(예: "분식")는 술집 뒤 · 기타 앞에 가나다순으로 끼운다.
+    _CAT_ORDER = {"한식": 0, "중식": 1, "일식": 2, "양식": 3, "카페": 4, "술집": 5, "기타": 99}
+    categories = sorted(
+        set(r.get("category", "기타") for r in items),
+        key=lambda c: (_CAT_ORDER.get(c, 50), c),
+    )
     # 카테고리는 simplify_category()의 고정 화이트리스트("카페"/"한식"/.../"기타")에서만
     # 나오므로 현재는 escape가 항등 변환이지만, 나중에 simplify_category가 원본 문자열을
     # 그대로 통과시키는 방향으로 바뀌어도 구멍이 안 생기도록 명시적으로 방어해 둔다
@@ -1368,15 +1374,15 @@ def render_cards(items: list) -> str:
         # 상위 5개 이름만 줄바꿈으로 복사. 예전엔 정렬 바 우측 끝에 인라인으로 붙어
         # 있어서 정렬 버튼으로 오인 클릭되기 쉬웠는데, 카드 리스트 직전의 독립된
         # 한 줄(utility-row)로 분리해 와이드하게 단독 배치한다.
-        # 유틸리티 줄: 카드 리스트 직전의 독립된 한 줄. 예전엔 "순위 복사" 버튼
-        # 하나만 와이드로 있었는데, 지역 탭 줄 맨 끝에 숨어 있어 잘 안 보이던
-        # "즐겨찾기"를 이리로 옮기고, 협찬성 매장까지 보여주는 표시 모드 토글
-        # ("협찬 포함")을 추가해 3버튼 구성으로 바꿨다.
+        # 유틸리티 줄: 카드 리스트 직전의 독립된 한 줄.
+        # 배치: [협찬 포함][순위 복사] | [즐겨찾기] - 왼쪽 둘은 "지금 보는 목록을
+        # 조작하는" 기능이고 즐겨찾기는 "다른 화면으로 이동"이라, 즐겨찾기만
+        # 핑크 톤 + 여백으로 살짝 떼어 성격이 다름을 시각적으로 구분한다.
         '<div class="utility-row">'
-        '<button class="util-btn vote-btn" onclick="copyVoteList(this)">📊 순위 복사</button>'
-        '<button class="util-btn" onclick="openFavoritesTab()">♥ 즐겨찾기</button>'
         '<button class="util-btn lg-toggle-btn" onclick="toggleSponsored(this)" '
         'title="내돈내산 지수 미달로 숨겨진 매장까지 표시">⚠️ 협찬 포함</button>'
+        '<button class="util-btn vote-btn" onclick="copyVoteList(this)">📊 순위 복사</button>'
+        '<button class="util-btn util-fav-btn" onclick="openFavoritesTab()">♥ 즐겨찾기</button>'
         '</div>'
     )
 
@@ -1918,15 +1924,45 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   body.dark .tabs {{
     background: #14161b;
   }}
-  /* 가로 스크롤 칩 바(지역 탭/카테고리/정렬)의 스크롤바 숨김 - 스크롤 기능은
-     그대로 유지되고, 안드로이드 크롬 등에서 보이던 가는 회색 바만 사라진다 */
-  .tabs, .cat-filter, .sort-bar {{
-    scrollbar-width: none;      /* Firefox */
+  /* 가로 스크롤 칩 바(지역 탭/카테고리/정렬)의 스크롤바 처리.
+     주의(과거 버그): 예전엔 숨김을 전역 적용했더니 데스크톱에서 드래그할
+     스크롤바가 사라지고 마우스 휠은 세로 전용이라, 화면 밖 지역 탭에 아예
+     접근할 수 없었다. 그래서 숨김은 터치 스와이프가 되는 모바일에만 걸고,
+     데스크톱은 얇은 스크롤바 + 휠 가로 변환(JS)으로 이동 수단을 보장한다. */
+  @media (max-width: 520px) {{
+    .tabs, .cat-filter, .sort-bar {{
+      scrollbar-width: none;      /* Firefox */
+    }}
+    .tabs::-webkit-scrollbar,
+    .cat-filter::-webkit-scrollbar,
+    .sort-bar::-webkit-scrollbar {{
+      display: none;              /* Chrome/Safari */
+    }}
   }}
-  .tabs::-webkit-scrollbar,
-  .cat-filter::-webkit-scrollbar,
-  .sort-bar::-webkit-scrollbar {{
-    display: none;              /* Chrome/Safari */
+  @media (min-width: 521px) {{
+    .tabs, .cat-filter, .sort-bar {{
+      scrollbar-width: thin;                       /* Firefox */
+      scrollbar-color: #d0d0d5 transparent;
+    }}
+    body.dark .tabs, body.dark .cat-filter, body.dark .sort-bar {{
+      scrollbar-color: #3a3f4a transparent;
+    }}
+    .tabs::-webkit-scrollbar,
+    .cat-filter::-webkit-scrollbar,
+    .sort-bar::-webkit-scrollbar {{
+      height: 5px;                                 /* Chrome/Safari: 얇게 */
+    }}
+    .tabs::-webkit-scrollbar-thumb,
+    .cat-filter::-webkit-scrollbar-thumb,
+    .sort-bar::-webkit-scrollbar-thumb {{
+      background: #d0d0d5;
+      border-radius: 999px;
+    }}
+    body.dark .tabs::-webkit-scrollbar-thumb,
+    body.dark .cat-filter::-webkit-scrollbar-thumb,
+    body.dark .sort-bar::-webkit-scrollbar-thumb {{
+      background: #3a3f4a;
+    }}
   }}
   .tab-btn {{
     flex: 0 0 auto;
@@ -2564,6 +2600,19 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     border-color: #2a2e38;
     color: #9aa0ab;
   }}
+  /* 즐겨찾기 버튼: 목록 조작 버튼들(협찬/복사)과 성격이 달라(화면 이동)
+     핑크 톤 + 왼쪽 여백으로 살짝 떼어 구분한다 */
+  .util-fav-btn {{
+    margin-left: 8px;           /* 기본 gap 8px에 더해 총 16px 간격 */
+    border-color: #ffc4d6;
+    background: #fff5f8;
+    color: #e0447a;
+  }}
+  body.dark .util-fav-btn {{
+    border-color: #4a2733;
+    background: #2b1a22;
+    color: #ff8ab0;
+  }}
   /* "협찬 포함" 토글이 켜진 상태 표시 */
   .lg-toggle-btn.active {{
     border-style: solid;
@@ -2647,6 +2696,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     box-shadow: 0 0 0 3px #ff5a36;
     transform: scale(1.02);
     transition: box-shadow 0.05s, transform 0.05s;
+  }}
+  /* 다크모드 전용 재선언 필수: body.dark .card의 box-shadow가 명시도에서
+     .card.picking을 이겨버려서, 이 규칙이 없으면 랜덤 추천 슬롯이 돌 때
+     반짝이는 주황 링이 다크모드에서 전혀 안 보인다 */
+  body.dark .card.picking {{
+    box-shadow: 0 0 0 3px #ff8a66;
   }}
   .pick-modal-overlay {{
     display: none;
@@ -2831,6 +2886,18 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   <!-- 탭 전환 기능: 버튼 클릭 시 모든 탭/버튼의 active를 지우고,
        클릭된 것에만 다시 active를 붙여서 그 내용만 보이게 만든다 -->
   <script>
+    // 데스크톱: 칩 바(지역 탭/카테고리/정렬) 위에서 마우스 세로 휠을 가로
+    // 스크롤로 변환한다. 스크롤바 드래그 없이도 휠만 굴려서 화면 밖 지역
+    // 탭에 접근할 수 있게 하는 장치 (모바일 터치 스와이프에는 영향 없음).
+    document.querySelectorAll('.tabs, .cat-filter, .sort-bar').forEach(function(bar) {{
+      bar.addEventListener('wheel', function(e) {{
+        if (bar.scrollWidth <= bar.clientWidth) return;       // 안 넘치면 관여 안 함
+        if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // 트랙패드 가로 제스처는 기본 동작 유지
+        bar.scrollLeft += e.deltaY;
+        e.preventDefault();  // 페이지 세로 스크롤로 새는 것 방지
+      }}, {{ passive: false }});
+    }});
+
     document.querySelectorAll('.tab-btn').forEach(function(btn) {{
       btn.addEventListener('click', function() {{
         document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
