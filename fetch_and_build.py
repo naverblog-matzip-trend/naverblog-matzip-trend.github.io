@@ -77,13 +77,20 @@ try:
             "협찬", "제공받아", "제공받은", "원고료", "체험단", "기자단",
             "무료로 제공", "업체로부터 제공", "지원을 받아", "서포터즈",
             "본 포스팅은", "해당 게시물은", "소정의 활동비",
+            # "영수증 리뷰"는 업체가 영수증 인증 조건으로 대가를 주는 마케팅
+            # 프로그램이라, 내돈내산이 아니라 협찬성으로 분류한다
+            "영수증 리뷰", "영수증리뷰",
         ]
     try:
         from config import GENUINE_KEYWORDS
     except ImportError:
         # "진짜 내돈내산" 판별용 키워드 - 협찬 문구가 없다고 자동으로 진짜인 건 아니라서,
-        # 반대로 이런 문구가 있으면 더 신뢰도 높은 후기로 본다
-        GENUINE_KEYWORDS = ["내돈내산", "내돈내먹", "영수증", "카드내역", "직접 결제"]
+        # 반대로 이런 문구가 있으면 더 신뢰도 높은 후기로 본다.
+        # 주의: "영수증"은 예전엔 여기 있었지만, "영수증 리뷰"라는 대가성 마케팅
+        # 프로그램과 겹쳐 신뢰 신호로 쓰기 애매해져서 목록에서 뺐다 (위의
+        # SPONSORED_KEYWORDS 참고). 단독 "영수증 인증"류 진짜 후기 일부를 잃지만,
+        # 마케팅 글을 신뢰 후기로 오인하는 것보다 낫다는 판단.
+        GENUINE_KEYWORDS = ["내돈내산", "내돈내먹", "카드내역", "직접 결제"]
     try:
         from config import MIN_SAMPLE_FOR_GENUINE_RATIO
     except ImportError:
@@ -189,6 +196,14 @@ try:
         # 품질 게이트: 수집 식당 수가 직전 실행의 이 비율 미만이면(급감 = API
         # 부분 장애 신호) 배포를 중단하고 기존 페이지를 유지한다. 0 = 기능 끔.
         QUALITY_GUARD_MIN_RATIO = 0.3
+    try:
+        from config import SEOUL_REGIONS
+    except ImportError:
+        SEOUL_REGIONS = []  # 비어 있으면 서울 전용 쿼터/탭 기능 전체가 꺼짐 (하위 호환)
+    try:
+        from config import SEOUL_TOP_COUNT
+    except ImportError:
+        SEOUL_TOP_COUNT = 10  # 서울 후보 중 화제성 상위 몇 개 권역을 선정할지
     try:
         from config import REGION_VOLUME_CACHE_FILE
     except ImportError:
@@ -687,9 +702,27 @@ def resolve_active_regions() -> list:
     except OSError:
         pass  # 캐시 저장 실패는 치명적이지 않으므로 무시하고 계속 진행
     scored.sort(key=lambda x: x[1], reverse=True)
-    hot_picks = [r for r, _ in scored[:HOT_REGION_COUNT]]
 
-    combined = list(CORE_REGIONS)
+    seoul_set = set(SEOUL_REGIONS)
+    if seoul_set:
+        # --- 서울 쿼터: 고정 지역 중 서울을 우선 채우고, 나머지는 서울 후보의
+        # 화제성 볼륨순으로 SEOUL_TOP_COUNT까지. 전국(HOT) 슬롯과 급상승 슬롯은
+        # 비서울 후보만 대상으로 바뀌어 서울이 전국 슬롯을 잠식하지 않는다. ---
+        seoul_picks = [r for r in CORE_REGIONS if r in seoul_set][:SEOUL_TOP_COUNT]
+        for r, _ in scored:
+            if len(seoul_picks) >= SEOUL_TOP_COUNT:
+                break
+            if r in seoul_set and r not in seoul_picks:
+                seoul_picks.append(r)
+        hot_pool = [(r, v) for r, v in scored if r not in seoul_set]
+        combined = seoul_picks + [r for r in CORE_REGIONS if r not in seoul_set]
+    else:
+        # 서울 분류 미설정: 기존 방식 그대로 (하위 호환)
+        seoul_picks = []
+        hot_pool = scored
+        combined = list(CORE_REGIONS)
+
+    hot_picks = [r for r, _ in hot_pool[:HOT_REGION_COUNT]]
     for r in hot_picks:
         if r not in combined:
             combined.append(r)
@@ -706,7 +739,9 @@ def resolve_active_regions() -> list:
         rising_scored = []
         for region, volume in scored:
             if region in combined:
-                continue  # 이미 고정/화제성 슬롯으로 선정된 지역은 제외
+                continue  # 이미 고정/화제성/서울 슬롯으로 선정된 지역은 제외
+            if region in seoul_set:
+                continue  # 서울은 전용 쿼터(SEOUL_TOP_COUNT)가 따로 있으므로 제외
             prev = prev_volumes.get(region)
             if not prev or volume <= prev:
                 continue  # 전일 데이터 없음 or 신규 글 없음(검색 인덱스 요동 포함)
@@ -738,7 +773,9 @@ def resolve_active_regions() -> list:
     elif RISING_REGION_COUNT > 0:
         print("[급상승 슬롯] 전일 화제성 데이터 없음 - 내일부터 동작 (첫날은 건너뜀)")
 
-    print(f"[지역 확정] 고정 {CORE_REGIONS} + 화제성 상위 {hot_picks}"
+    print(f"[지역 확정] "
+          + (f"서울 {seoul_picks} + " if seoul_picks else "")
+          + f"고정 {CORE_REGIONS} + 화제성 상위 {hot_picks}"
           + (f" + 급상승 {rising_picks}" if rising_picks else "")
           + f" = {combined}")
     return combined
@@ -1243,7 +1280,38 @@ def build_tabs(all_results: list, region_ranking: list) -> dict:
     tabs["전체"] = overall + lg_overall
     if region_ranking:
         tabs["지역랭킹"] = region_ranking  # 두 번째 탭 = 지역별 랭킹 (데이터 있을 때만)
-    for region in REGIONS:
+
+    # --- "서울 전체" 탭: 서울 권역들을 한데 모은 미니 "전체" 랭킹.
+    # 전체 탭과 같은 규칙(상승 매장, 이름 중복 제거, TOP_N개 + 협찬 숨김분)을
+    # 서울 소속 지역에만 적용한다. 서울 접이식 서브탭의 첫 항목으로 쓰인다. ---
+    _seoul = set(SEOUL_REGIONS)
+    if _seoul and any(r["region"] in _seoul for r in all_results):
+        seoul_overall, seoul_lg = [], []
+        _seen_s, _seen_s_lg = set(), set()
+        for r in all_results:
+            if r["region"] not in _seoul or r["growth"] <= 0:
+                continue
+            if r.get("low_genuine"):
+                if r["name"] not in _seen_s and r["name"] not in _seen_s_lg and len(seoul_lg) < TOP_N:
+                    _seen_s_lg.add(r["name"])
+                    seoul_lg.append(r)
+                continue
+            if r["name"] in _seen_s or r["name"] in _seen_s_lg:
+                continue  # 서울 내 타 권역 동명 매장 중복 방지 (숨김분 포함)
+            _seen_s.add(r["name"])
+            if len(seoul_overall) < TOP_N:
+                seoul_overall.append(r)
+        if seoul_overall or seoul_lg:
+            tabs["서울 전체"] = seoul_overall + seoul_lg
+    # 지역 탭 순서: 수집 순서(REGIONS = 고정 + 화제성 + 급상승)가 아니라
+    # 이번 실행의 지역랭킹(증가폭 합계 내림차순)을 그대로 따른다.
+    # -> 탭 줄에서 왼쪽일수록 "지금 뜨는 지역"이고, 지역랭킹 탭의 순위와
+    #    탭 나열 순서가 항상 일치해서 화면 간 어긋남이 없다.
+    # 랭킹에 없는 지역(집계 결과 0곳)은 어차피 탭도 안 생기지만,
+    # 방어적으로 뒤에 원래 순서대로 붙인다.
+    _ranked_regions = [row["region"] for row in region_ranking] if region_ranking else []
+    _ordered_regions = _ranked_regions + [r for r in REGIONS if r not in _ranked_regions]
+    for region in _ordered_regions:
         # 기본 표시분(내돈내산 지수 충족) 상위 N개 + 협찬 포함 모드용 숨김분 상위 N개.
         # 숨김분도 all_results 정렬 순서(점수순)를 그대로 물려받는다.
         clean = [
@@ -1736,7 +1804,16 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
 
     # 하단 안내 문구: 협찬 제외 건수는 항상 표시하고, 내돈내산 지수 기준으로
     # 필터링하는 기능(MIN_GENUINE_RATIO_TO_SHOW)이 켜져 있으면 그 기준도 같이 안내한다
-    filter_note = f"지역별 집계 합산 기준 협찬·광고·체험단 추정 게시물 {total_filtered}건 제외"
+    # 집계 범위 표기: 배너 배지에 넣었더니 미관을 해쳐서 안내 문구 앞으로 이동.
+    # "서울 상위 S" = 서울 쿼터로 선정된 권역 수, "전체 상위 T" = 이번 실행의
+    # 전체 집계 지역 수(서울 포함). 둘 다 실제 탭이 생긴 지역만 센다.
+    _seoul_cnt = len([k for k in tabs if k in set(SEOUL_REGIONS)])
+    _total_cnt = len([k for k in tabs if k not in ("전체", "지역랭킹", "서울 전체")])
+    _scope_note = (
+        f"서울 상위 {_seoul_cnt} · 전체 상위 {_total_cnt}개 지역 " if _seoul_cnt
+        else (f"상위 {_total_cnt}개 지역 " if _total_cnt else "")
+    )
+    filter_note = f"{_scope_note}집계 합산 기준 협찬·광고·체험단 추정 게시물 {total_filtered}건 제외"
     if MIN_GENUINE_RATIO_TO_SHOW is not None:
         filter_note += f" · 내돈내산 지수 {MIN_GENUINE_RATIO_TO_SHOW}% 이상 게시글로만 집계"
 
@@ -1745,16 +1822,46 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     # 첫 번째 탭(idx==0)만 처음부터 화면에 보이도록 "active" 클래스를 붙인다.
     tab_names = list(tabs.keys())
     tab_buttons_html = ""
+    seoul_subtab_html = ""
     tab_panels_html = ""
+    _seoul_set = set(SEOUL_REGIONS)
     for idx, name in enumerate(tab_names):
         active_btn = " active" if idx == 0 else ""
         active_panel = " active" if idx == 0 else ""
-        tab_buttons_html += f'<button class="tab-btn{active_btn}" data-tab="tab-{idx}">{name}</button>'
+        # 버튼 배치: 전체/지역랭킹은 메인 줄 고정, "서울 전체"와 서울 소속 권역은
+        # 접이식 서울 서브탭 줄로, 나머지 지역은 메인 줄로 간다.
+        # 지역 버튼에는 data-region-tab(구분자)과 data-rank(지역랭킹 순번)를 심어
+        # 가나다/랭킹 정렬 토글이 각 줄 안에서 버튼만 재배열할 수 있게 한다.
+        if name in ("전체", "지역랭킹"):
+            tab_buttons_html += f'<button class="tab-btn{active_btn}" data-tab="tab-{idx}">{name}</button>'
+        elif name == "서울 전체":
+            seoul_subtab_html += f'<button class="tab-btn{active_btn}" data-tab="tab-{idx}">{name}</button>'
+        elif name in _seoul_set:
+            seoul_subtab_html += (
+                f'<button class="tab-btn{active_btn}" data-tab="tab-{idx}" '
+                f'data-region-tab="1" data-rank="{idx}">{name}</button>'
+            )
+        else:
+            tab_buttons_html += (
+                f'<button class="tab-btn{active_btn}" data-tab="tab-{idx}" '
+                f'data-region-tab="1" data-rank="{idx}">{name}</button>'
+            )
         # "지역랭킹" 탭만 다른 모양의 카드(render_region_cards)를 쓰고, 나머지는 식당 카드
         panel_content = render_region_cards(tabs[name]) if name == "지역랭킹" else render_cards(tabs[name])
         # data-tabname: 공유 버튼(shareCard)이 "지금 어느 탭인지"를 알아야
         # "부산 급상승순 1위 - ..." 처럼 탭 이름을 공유 문구에 넣을 수 있다
         tab_panels_html += f'<div class="tab-panel{active_panel}" id="tab-{idx}" data-tabname="{name}">{panel_content}</div>'
+    # 서울 서브탭이 있으면 메인 줄의 지역랭킹 뒤에 "서울" 접이식 토글 버튼을 끼운다.
+    # (tab-btn 클래스가 아니라 seoul-btn - 패널과 직접 연결되지 않는 펼침 버튼)
+    if seoul_subtab_html:
+        _anchor = '</button>'  # 지역랭킹 버튼 닫힘 직후 위치
+        _pos = tab_buttons_html.find('지역랭킹</button>')
+        _cut = _pos + len('지역랭킹</button>')
+        tab_buttons_html = (
+            tab_buttons_html[:_cut]
+            + '<button class="seoul-btn" onclick="toggleSeoulTabs(this)">🏙️ 서울 ▾</button>'
+            + tab_buttons_html[_cut:]
+        )
 
     # "즐겨찾기" 탭은 서버(파이썬)가 아니라 브라우저(localStorage)가 아는 정보라서
     # 여기서는 빈 틀만 만들어두고, 실제 내용은 페이지가 열릴 때 JS가 채워 넣는다
@@ -1904,25 +2011,75 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     border-radius: 12px;
     font-size: 11px;
   }}
-  .tabs {{
-    max-width: 560px;
-    margin: 0 auto 14px;
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    /* 스크롤해도 지역 탭이 화면 상단에 붙어 있게 (모바일에서 리스트를 깊이
-       내려간 뒤 다른 지역으로 이동할 때 맨 위까지 되돌아갈 필요 없어짐).
-       배경색을 페이지와 같게 깔아서 카드가 탭 뒤로 지나갈 때 비치지 않게 한다. */
+  /* 탭 영역 래퍼: 메인 탭 줄 + 서울 서브탭 줄을 함께 상단 고정(sticky).
+     배경색을 페이지와 같게 깔아 카드가 탭 뒤로 지나갈 때 비치지 않게 한다.
+     (예전엔 .tabs 단일 줄에 sticky가 있었는데, 서울 서브탭이 생기면서
+      두 줄을 같이 고정해야 해서 래퍼로 이동) */
+  .tabs-area {{
     position: sticky;
     top: 0;
     z-index: 20;
     background: #f5f5f7;
     padding-top: 8px;
+    margin-bottom: 14px;
     transition: background 0.25s;
   }}
-  body.dark .tabs {{
+  body.dark .tabs-area {{
     background: #14161b;
+  }}
+  .tabs {{
+    max-width: 560px;
+    margin: 0 auto;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }}
+  /* 서울 접이식 서브탭 줄: 기본 접힘, 서울 버튼으로 펼침 */
+  .seoul-subtabs {{
+    display: none;
+    margin-top: 6px;
+  }}
+  .seoul-subtabs.open {{
+    display: flex;
+  }}
+  /* 서울 토글 버튼: 브랜드 주황과 구분되는 파란 계열 전용 색 */
+  .seoul-btn {{
+    flex: 0 0 auto;
+    border: none;
+    background: #e8edff;
+    color: #3d5af1;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }}
+  .seoul-btn.open,
+  .seoul-btn.seoul-active {{
+    background: #3d5af1;
+    color: white;
+  }}
+  body.dark .seoul-btn {{
+    background: #1d2440;
+    color: #8fa3ff;
+  }}
+  body.dark .seoul-btn.open,
+  body.dark .seoul-btn.seoul-active {{
+    background: #3d5af1;
+    color: white;
+  }}
+  /* 서울 서브탭의 활성 탭도 서울 전용 파란색 */
+  .seoul-subtabs .tab-btn.active {{
+    background: #3d5af1;
+  }}
+  /* 정렬 토글 독립 줄: 배너/티커와 탭 사이, 오른쪽 정렬 */
+  .tab-tools {{
+    max-width: 560px;
+    margin: 0 auto 6px;
+    display: flex;
+    justify-content: flex-end;
   }}
   /* 가로 스크롤 칩 바(지역 탭/카테고리/정렬)의 스크롤바 처리.
      주의(과거 버그): 예전엔 숨김을 전역 적용했더니 데스크톱에서 드래그할
@@ -1978,6 +2135,24 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   .tab-btn.active {{
     background: #ff5a36;
     color: white;
+  }}
+  /* 지역 탭 정렬 토글 칩 (랭킹순 <-> 가나다순): 일반 탭보다 작고 점선 테두리로
+     "탭이 아니라 설정"임을 구분. 탭 줄 맨 앞 고정이라 스크롤과 무관하게 보임 */
+  .tab-order-btn {{
+    flex: 0 0 auto;
+    border: 1px dashed #ccc;
+    background: transparent;
+    color: #888;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }}
+  body.dark .tab-order-btn {{
+    border-color: #3a3f4a;
+    color: #9aa0ab;
   }}
   .tab-panel {{
     display: none;
@@ -2096,6 +2271,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   }}
   .info {{
     flex: 1;
+    min-width: 0;   /* flex 텍스트 컨테이너 표준 위생: 자식이 아무리 길어도
+                       카드 폭 안에서 줄바꿈되게 (모바일 쿼리와 규칙 일관) */
   }}
   .name {{
     font-size: 16px;
@@ -2594,6 +2771,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     border-radius: 12px;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;         /* 320px급 좁은 화면에서 라벨이 버튼 밖으로 */
+    text-overflow: ellipsis;  /* 삐져나와 옆 버튼과 겹치는 대신 "…"로 잘리게 */
   }}
   body.dark .util-btn {{
     background: #1e2129;
@@ -2807,9 +2986,19 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   <!-- 롤링 전광판: 백엔드가 구운 슬라이드를 JS가 7초마다 순환.
        클릭/호버 어떤 인터랙션도 받지 않는 순수 자동 롤링 (pointer-events:none) -->
   {ticker_html}
-  <!-- 탭 버튼들 (전체/지역랭킹/지역별) - 위에서 만들어둔 tab_buttons_html이 여기 들어감 -->
-  <div class="tabs">
-    {tab_buttons_html}
+  <!-- 지역 탭 정렬 토글: 배너/티커와 탭 줄 사이의 독립된 작은 줄 (오른쪽 정렬) -->
+  <div class="tab-tools">
+    <button class="tab-order-btn" onclick="toggleTabOrder()" title="지역 탭 나열 순서 전환">🔥 랭킹순</button>
+  </div>
+  <!-- 탭 영역: 메인 줄(전체/지역랭킹/서울토글/비서울 지역) + 서울 접이식 서브탭 줄.
+       스크롤 고정(sticky)은 두 줄을 함께 감싸는 이 래퍼가 담당한다 -->
+  <div class="tabs-area">
+    <div class="tabs">
+      {tab_buttons_html}
+    </div>
+    <div class="tabs seoul-subtabs" id="seoul-subtabs">
+      {seoul_subtab_html}
+    </div>
   </div>
   <p class="filter-note">{filter_note}</p>
   <!-- 탭 내용물 (카드 목록들) - tab_panels_html이 여기 들어감.
@@ -2898,17 +3087,74 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       }}, {{ passive: false }});
     }});
 
+    // --- 지역 탭 정렬 토글: 랭킹순(서버가 심은 data-rank 순, 기본) <-> 가나다순.
+    // 전체/지역랭킹 탭은 data-region-tab이 없어 재배열 대상에서 제외되고
+    // 항상 맨 앞에 남는다. 선택은 localStorage에 저장되어 재방문 시 유지 ---
+    function applyTabOrder(mode) {{
+      // 메인 줄(비서울 지역)과 서울 서브탭 줄, 각 줄 안에서 따로 재배열한다.
+      // 고정 요소(전체/지역랭킹/서울버튼, 서울 전체)는 data-region-tab이 없어
+      // 대상에서 빠지고 항상 각 줄의 맨 앞에 남는다.
+      document.querySelectorAll('.tabs').forEach(function(bar) {{
+        var btns = Array.prototype.slice.call(bar.querySelectorAll('.tab-btn[data-region-tab]'));
+        if (!btns.length) return;
+        btns.sort(mode === 'abc'
+          ? function(a, b) {{ return a.textContent.localeCompare(b.textContent, 'ko'); }}
+          : function(a, b) {{ return Number(a.dataset.rank) - Number(b.dataset.rank); }});
+        btns.forEach(function(b) {{ bar.appendChild(b); }});  // 고정 탭들 뒤로 순서대로 재부착
+      }});
+      var toggle = document.querySelector('.tab-order-btn');
+      if (toggle) toggle.textContent = mode === 'abc' ? '🔤 가나다순' : '🔥 랭킹순';
+    }}
+
+    function toggleTabOrder() {{
+      var cur = 'rank';
+      try {{ cur = localStorage.getItem('naver_trend_tab_order') || 'rank'; }} catch (e) {{ }}
+      var next = cur === 'rank' ? 'abc' : 'rank';
+      try {{ localStorage.setItem('naver_trend_tab_order', next); }} catch (e) {{ }}
+      applyTabOrder(next);
+    }}
+
+    // 페이지 로드 시 저장된 정렬 복원 (기본은 서버 렌더 순서 = 랭킹순이라
+    // 가나다순으로 저장된 사용자만 재배열이 일어난다)
+    try {{
+      if (localStorage.getItem('naver_trend_tab_order') === 'abc') applyTabOrder('abc');
+    }} catch (e) {{ }}
+
+    // --- 서울 접이식 탭: 버튼을 누르면 서브탭 줄(서울 전체 + 상위 권역들)이
+    // 펼쳐지고, 처음 펼칠 때(서울 패널이 활성 아닐 때) "서울 전체"로 이동한다.
+    // 다시 누르면 접힌다 (보고 있던 패널은 그대로 유지) ---
+    function toggleSeoulTabs(btn) {{
+      var sub = document.getElementById('seoul-subtabs');
+      if (!sub) return;
+      var opening = !sub.classList.contains('open');
+      sub.classList.toggle('open', opening);
+      btn.classList.toggle('open', opening);
+      btn.textContent = opening ? '🏙️ 서울 ▴' : '🏙️ 서울 ▾';
+      if (opening) {{
+        var activeInSeoul = sub.querySelector('.tab-btn.active');
+        if (!activeInSeoul) {{
+          var first = sub.querySelector('.tab-btn');  // = "서울 전체"
+          if (first) first.click();
+        }}
+      }}
+    }}
+
     document.querySelectorAll('.tab-btn').forEach(function(btn) {{
       btn.addEventListener('click', function() {{
         document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
         document.querySelectorAll('.tab-panel').forEach(function(p) {{ p.classList.remove('active'); }});
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
+        // 서울 소속 패널을 보고 있으면 메인 줄의 서울 버튼도 파란 활성으로 표시
+        var seoulBtn = document.querySelector('.seoul-btn');
+        if (seoulBtn) {{
+          seoulBtn.classList.toggle('seoul-active', !!btn.closest('.seoul-subtabs'));
+        }}
         // 리스트를 깊이 스크롤한 상태에서 탭을 바꾸면 새 탭의 중간 지점부터
         // 보이는 문제가 있었다 (탭바가 sticky라 화면 위쪽에 떠 있는 상태).
         // 탭 위치보다 아래로 내려가 있을 때만 탭바 바로 위로 스크롤을 되돌린다.
         // (탭이 원래 위치에 그대로 보이는 상태에서는 아무것도 하지 않음)
-        var tabsEl = document.querySelector('.tabs');
+        var tabsEl = document.querySelector('.tabs-area');
         if (tabsEl && window.scrollY > tabsEl.offsetTop) {{
           window.scrollTo(0, tabsEl.offsetTop);
         }}
@@ -3335,7 +3581,7 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       document.querySelectorAll('.tab-panel').forEach(function(p) {{ p.classList.remove('active'); }});
       var panel = document.getElementById('tab-favorites');
       if (panel) panel.classList.add('active');
-      var tabsEl = document.querySelector('.tabs');
+      var tabsEl = document.querySelector('.tabs-area');
       if (tabsEl && window.scrollY > tabsEl.offsetTop) {{
         window.scrollTo(0, tabsEl.offsetTop);
       }}
