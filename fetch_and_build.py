@@ -2011,6 +2011,14 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     border-radius: 12px;
     font-size: 11px;
   }}
+  /* 업데이트 지연 경고: 마지막 갱신이 3시간을 넘으면 JS(updateRelativeTimeLoop)가
+     이 클래스를 붙인다. 정상 주기가 2시간(+빌드 약 15분)이라, 3시간 초과는 예약
+     실행 한 회차 이상이 통째로 빠졌다는 뜻 = cron-job.org/PAT/네이버 API/품질
+     게이트 중 어딘가가 멈춘 신호. 배지를 붉게 바꿔 열람만으로 이상을 감지한다. */
+  .hero-date.stale {{
+    background: #dc3545;
+    color: #fff;
+  }}
   /* 탭 영역 래퍼: 메인 탭 줄 + 서울 서브탭 줄을 함께 상단 고정(sticky).
      배경색을 페이지와 같게 깔아 카드가 탭 뒤로 지나갈 때 비치지 않게 한다.
      (예전엔 .tabs 단일 줄에 sticky가 있었는데, 서울 서브탭이 생기면서
@@ -3625,6 +3633,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       document.querySelectorAll('.tab-panel').forEach(function(p) {{ p.classList.remove('active'); }});
       var panel = document.getElementById('tab-favorites');
       if (panel) panel.classList.add('active');
+      // 서울 하위 탭을 보던 중 이동하면 메인 줄의 서울 버튼 파란 활성 표시가
+      // 남는다 - 탭 버튼 핸들러에만 있던 해제 로직이 이 경로에 누락되어 있었음.
+      // (접힘 상태(open)는 건드리지 않는다 - 탭 줄 자체가 계속 보이는 것과
+      //  같은 원칙으로, 펼쳐둔 하위 탭 줄은 유저가 되돌아갈 통로로 유지)
+      var seoulBtn = document.querySelector('.seoul-btn');
+      if (seoulBtn) seoulBtn.classList.remove('seoul-active');
       var tabsEl = document.querySelector('.tabs-area');
       if (tabsEl && window.scrollY > tabsEl.offsetTop) {{
         window.scrollTo(0, tabsEl.offsetTop);
@@ -3940,19 +3954,36 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       var generatedAt = new Date(heroEl.dataset.generatedAt);
       if (isNaN(generatedAt.getTime())) return;
 
+      // --- 업데이트 지연 감지: 정상이라면 데이터 나이는 최대 2시간+빌드 15분
+      // 안쪽이다. 3시간(180분)을 넘겼다는 건 예약 실행이 최소 한 회차 통째로
+      // 빠졌다는 뜻(외부 스케줄러 장애/PAT 만료/API 전면 장애/품질 게이트 연속
+      // 실패 등)이라, 배지를 경고 스타일로 바꿔 사이트를 여는 것만으로 파이프
+      // 라인 이상을 알 수 있게 한다. 서버 호출 없이 시각 비교만으로 동작한다.
+      var STALE_THRESHOLD_MIN = 180;
+      var pillEl = relEl.parentElement;
+
       function render() {{
         var diffMin = Math.floor((Date.now() - generatedAt.getTime()) / 60000);
+        var label;
         if (diffMin < 1) {{
-          relEl.textContent = '방금 갱신됨';
+          label = '방금 갱신됨';
         }} else if (diffMin < 60) {{
-          relEl.textContent = diffMin + '분 전 갱신';
+          label = diffMin + '분 전 갱신';
         }} else {{
           var diffHour = Math.floor(diffMin / 60);
           if (diffHour < 24) {{
-            relEl.textContent = diffHour + '시간 전 갱신';
+            label = diffHour + '시간 전 갱신';
           }} else {{
-            relEl.textContent = Math.floor(diffHour / 24) + '일 전 갱신';
+            label = Math.floor(diffHour / 24) + '일 전 갱신';
           }}
+        }}
+        var isStale = diffMin >= STALE_THRESHOLD_MIN;
+        if (isStale) {{
+          label = '⚠️ ' + label + ' · 업데이트 지연';
+        }}
+        relEl.textContent = label;
+        if (pillEl && pillEl.classList) {{
+          pillEl.classList.toggle('stale', isStale);
         }}
       }}
       render();
