@@ -2074,12 +2074,63 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   .seoul-subtabs .tab-btn.active {{
     background: #3d5af1;
   }}
-  /* 정렬 토글 독립 줄: 배너/티커와 탭 사이, 오른쪽 정렬 */
+  /* 정렬 토글 독립 줄: 배너/티커와 탭 사이, 전체 탭과 같은 왼쪽 라인 */
   .tab-tools {{
     max-width: 560px;
     margin: 0 auto 6px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
+  }}
+  /* iOS 설정풍 토글 스위치: 트랙 위 원형 썸이 좌우로 미끄러지고,
+     옆 라벨이 현재 모드(🔥 랭킹순 / 🔤 가나다순)를 이모지와 함께 표기 */
+  .tab-order-btn {{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    background: transparent;
+    padding: 4px 2px;
+    cursor: pointer;
+  }}
+  .tot-track {{
+    width: 36px;
+    height: 21px;
+    border-radius: 999px;
+    background: #d5d5db;
+    position: relative;
+    transition: background 0.2s;
+    flex: 0 0 auto;
+  }}
+  .tot-thumb {{
+    position: absolute;
+    top: 2.5px;
+    left: 2.5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.2s;
+  }}
+  .tab-order-btn.on .tot-track {{
+    background: #ff5a36;
+  }}
+  .tab-order-btn.on .tot-thumb {{
+    transform: translateX(15px);
+  }}
+  .tot-label {{
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+  }}
+  body.dark .tot-track {{
+    background: #3a3f4a;
+  }}
+  body.dark .tab-order-btn.on .tot-track {{
+    background: #ff5a36;
+  }}
+  body.dark .tot-label {{
+    color: #9aa0ab;
   }}
   /* 가로 스크롤 칩 바(지역 탭/카테고리/정렬)의 스크롤바 처리.
      주의(과거 버그): 예전엔 숨김을 전역 적용했더니 데스크톱에서 드래그할
@@ -2135,24 +2186,6 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   .tab-btn.active {{
     background: #ff5a36;
     color: white;
-  }}
-  /* 지역 탭 정렬 토글 칩 (랭킹순 <-> 가나다순): 일반 탭보다 작고 점선 테두리로
-     "탭이 아니라 설정"임을 구분. 탭 줄 맨 앞 고정이라 스크롤과 무관하게 보임 */
-  .tab-order-btn {{
-    flex: 0 0 auto;
-    border: 1px dashed #ccc;
-    background: transparent;
-    color: #888;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 8px 10px;
-    border-radius: 999px;
-    cursor: pointer;
-    white-space: nowrap;
-  }}
-  body.dark .tab-order-btn {{
-    border-color: #3a3f4a;
-    color: #9aa0ab;
   }}
   .tab-panel {{
     display: none;
@@ -2986,9 +3019,15 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
   <!-- 롤링 전광판: 백엔드가 구운 슬라이드를 JS가 7초마다 순환.
        클릭/호버 어떤 인터랙션도 받지 않는 순수 자동 롤링 (pointer-events:none) -->
   {ticker_html}
-  <!-- 지역 탭 정렬 토글: 배너/티커와 탭 줄 사이의 독립된 작은 줄 (오른쪽 정렬) -->
+  <!-- 지역 탭 정렬 토글: 배너/티커와 탭 줄 사이의 독립된 작은 줄.
+       발견성을 위해 점선 칩 대신 iOS 설정풍 토글 스위치로 - 끔(회색)=랭킹순(기본),
+       켬(주황)=가나다순. 위치는 전체 탭과 같은 왼쪽 라인 -->
   <div class="tab-tools">
-    <button class="tab-order-btn" onclick="toggleTabOrder()" title="지역 탭 나열 순서 전환">🔥 랭킹순</button>
+    <button class="tab-order-btn" onclick="toggleTabOrder()" role="switch" aria-checked="false"
+            title="지역 탭 나열 순서 전환">
+      <span class="tot-track"><span class="tot-thumb"></span></span>
+      <span class="tot-label">🔥 랭킹순</span>
+    </button>
   </div>
   <!-- 탭 영역: 메인 줄(전체/지역랭킹/서울토글/비서울 지역) + 서울 접이식 서브탭 줄.
        스크롤 고정(sticky)은 두 줄을 함께 감싸는 이 래퍼가 담당한다 -->
@@ -3103,7 +3142,12 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
         btns.forEach(function(b) {{ bar.appendChild(b); }});  // 고정 탭들 뒤로 순서대로 재부착
       }});
       var toggle = document.querySelector('.tab-order-btn');
-      if (toggle) toggle.textContent = mode === 'abc' ? '🔤 가나다순' : '🔥 랭킹순';
+      if (toggle) {{
+        toggle.classList.toggle('on', mode === 'abc');  // 스위치 썸 이동 + 트랙 색
+        toggle.setAttribute('aria-checked', mode === 'abc' ? 'true' : 'false');
+        var lbl = toggle.querySelector('.tot-label');
+        if (lbl) lbl.textContent = mode === 'abc' ? '🔤 가나다순' : '🔥 랭킹순';
+      }}
     }}
 
     function toggleTabOrder() {{
