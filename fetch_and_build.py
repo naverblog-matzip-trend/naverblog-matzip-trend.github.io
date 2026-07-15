@@ -2027,6 +2027,85 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     background: #dc3545;
     color: #fff;
   }}
+  /* --- 배너 색상 테마: 🎨 버튼으로 선택, localStorage 저장 (다크모드와 같은 패턴).
+     기본(클래스 없음)=현재 로즈 그라데이션. 서버는 관여하지 않고 JS가 .hero에
+     ht-v* 클래스만 붙였다 뗀다. 새 테마 추가 시 여기 CSS + 아래 팔레트 점 + JS의
+     HERO_THEMES 배열까지 세 곳을 함께 수정할 것 --- */
+  .hero.ht-v2 {{ background: linear-gradient(135deg, #1e1b4b, #4338ca, #7c3aed); }}
+  .hero.ht-v2 .hero-badge-secondary {{ color: #4338ca; }}
+  .hero.ht-v3 {{ background: linear-gradient(to top right, #064e3b, #059669, #34d399); }}
+  .hero.ht-v3 .hero-badge-secondary {{ color: #047857; }}
+  .hero.ht-v4 {{ background: linear-gradient(to top right, #7c2d92, #db2777, #f59e0b); }}
+  .hero.ht-v4 .hero-badge-secondary {{ color: #a21caf; }}
+  .hero.ht-v5 {{ background: linear-gradient(to top right, #0c4a6e, #0284c7, #22d3ee); }}
+  .hero.ht-v5 .hero-badge-secondary {{ color: #0369a1; }}
+  .hero.ht-v6 {{ background: #1c1c1e; }}
+  .hero.ht-v6 .hero-icon {{ color: #ff6b35; opacity: 0.25; }}
+  .hero.ht-v6 .hero-badge {{ background: rgba(255,107,53,0.18); color: #ff8c5a; }}
+  .hero.ht-v6 .hero-badge-secondary {{ background: #ff6b35; color: #fff; }}
+  .hero.ht-v6 h1 {{ background: linear-gradient(90deg, #ff6b35, #ffb347);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }}
+  .hero.ht-v6 .hero-date {{ background: rgba(255,255,255,0.1); }}
+  .hero.ht-v7 {{ background:
+      radial-gradient(at 20% 0%, #f43f5e 0%, transparent 55%),
+      radial-gradient(at 90% 15%, #fb923c 0%, transparent 55%),
+      radial-gradient(at 80% 100%, #8b5cf6 0%, transparent 55%),
+      radial-gradient(at 10% 90%, #ec4899 0%, transparent 55%),
+      #be185d; }}
+  .hero.ht-v8 {{ background: #fff; color: #1a1a1a; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }}
+  .hero.ht-v8 .hero-icon {{ color: #f43f5e; opacity: 0.12; }}
+  .hero.ht-v8 .hero-badge {{ background: #fee2e2; color: #dc2626; }}
+  .hero.ht-v8 .hero-badge-secondary {{ background: #1a1a1a; color: #fff; }}
+  .hero.ht-v8 h1 {{ color: #1a1a1a; }}
+  .hero.ht-v8 .hero-meta {{ color: #888; }}
+  .hero.ht-v8 .hero-date {{ background: #f3f4f6; color: #666; }}
+  .hero.ht-v8 .hero-date.stale {{ background: #dc3545; color: #fff; }}
+  .hero.ht-v8 .theme-toggle {{ background: #f3f4f6; }}
+  body.dark .hero.ht-v8 {{ background: #2c2c2e; color: #eee; }}
+  body.dark .hero.ht-v8 h1 {{ color: #eee; }}
+  body.dark .hero.ht-v8 .hero-meta {{ color: #aaa; }}
+  body.dark .hero.ht-v8 .hero-date {{ background: #3a3a3c; color: #aaa; }}
+  body.dark .hero.ht-v8 .hero-date.stale {{ background: #dc3545; color: #fff; }}
+  body.dark .hero.ht-v8 .theme-toggle {{ background: #3a3a3c; }}
+  .hero.ht-v9 {{ background: linear-gradient(160deg, #0f0f0f 40%, #2d1f00 100%);
+    border: 1px solid rgba(212,175,55,0.35); }}
+  .hero.ht-v9 .hero-icon {{ color: #d4af37; opacity: 0.2; }}
+  .hero.ht-v9 .hero-badge {{ background: rgba(212,175,55,0.15); color: #e6c96a; }}
+  .hero.ht-v9 .hero-badge-secondary {{ background: #d4af37; color: #1a1a1a; }}
+  .hero.ht-v9 h1 {{ color: #f5e6b8; }}
+  .hero.ht-v9 .hero-meta {{ color: rgba(230,201,106,0.8); }}
+  .hero.ht-v9 .hero-date {{ background: rgba(255,255,255,0.08); }}
+  /* 🎨 배너 색상 버튼 (정렬 토글 줄 오른쪽 끝) + 색상 점 팔레트 줄 */
+  .hero-theme-btn {{
+    border: none;
+    background: transparent;
+    font-size: 17px;
+    padding: 4px 2px;
+    cursor: pointer;
+    line-height: 1;
+  }}
+  .hero-theme-pop {{
+    max-width: 560px;
+    margin: 0 auto 6px;
+    display: none;
+    gap: 9px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding: 2px 2px 4px;
+  }}
+  .hero-theme-pop.open {{ display: flex; }}
+  .ht-dot {{
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.12);
+    cursor: pointer;
+    padding: 0;
+    flex: 0 0 auto;
+  }}
+  .ht-dot.active {{ border-color: #1a1a1a; transform: scale(1.15); }}
+  body.dark .ht-dot {{ border-color: rgba(255,255,255,0.2); }}
+  body.dark .ht-dot.active {{ border-color: #fff; }}
   /* 탭 영역 래퍼: 메인 탭 줄 + 서울 서브탭 줄을 함께 상단 고정(sticky).
      배경색을 페이지와 같게 깔아 카드가 탭 뒤로 지나갈 때 비치지 않게 한다.
      (예전엔 .tabs 단일 줄에 sticky가 있었는데, 서울 서브탭이 생기면서
@@ -2095,7 +2174,8 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     max-width: 560px;
     margin: 0 auto 6px;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between; /* 좌: 정렬 토글 / 우: 🎨 배너 색상 버튼 */
+    align-items: center;
   }}
   /* iOS 설정풍 토글 스위치: 트랙 위 원형 썸이 좌우로 미끄러지고,
      옆 라벨이 현재 모드(🔥 랭킹순 / 🔤 가나다순)를 이모지와 함께 표기 */
@@ -3044,6 +3124,21 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
       <span class="tot-track"><span class="tot-thumb"></span></span>
       <span class="tot-label">🔥 랭킹순</span>
     </button>
+    <!-- 배너 색상 변경: 누르면 아래 색상 점 팔레트 줄이 펼쳐진다 -->
+    <button class="hero-theme-btn" onclick="toggleHeroThemePop()" title="배너 색상 변경" aria-label="배너 색상 변경">🎨</button>
+  </div>
+  <!-- 배너 색상 팔레트: 점 하나가 테마 하나. 선택은 localStorage에 저장되어 재방문 시 유지.
+       점의 배경은 각 테마의 대표색(그라데이션 축약판) -->
+  <div class="hero-theme-pop" id="hero-theme-pop">
+    <button class="ht-dot" data-ht="" style="background:linear-gradient(45deg,#f43f5e,#fb923c)" title="로즈 (기본)" aria-label="로즈 (기본)"></button>
+    <button class="ht-dot" data-ht="ht-v2" style="background:linear-gradient(45deg,#1e1b4b,#7c3aed)" title="미드나잇" aria-label="미드나잇"></button>
+    <button class="ht-dot" data-ht="ht-v3" style="background:linear-gradient(45deg,#064e3b,#34d399)" title="에메랄드" aria-label="에메랄드"></button>
+    <button class="ht-dot" data-ht="ht-v4" style="background:linear-gradient(45deg,#7c2d92,#f59e0b)" title="선셋 퍼플" aria-label="선셋 퍼플"></button>
+    <button class="ht-dot" data-ht="ht-v5" style="background:linear-gradient(45deg,#0c4a6e,#22d3ee)" title="청량 블루" aria-label="청량 블루"></button>
+    <button class="ht-dot" data-ht="ht-v6" style="background:linear-gradient(45deg,#1c1c1e 55%,#ff6b35)" title="차콜 네온" aria-label="차콜 네온"></button>
+    <button class="ht-dot" data-ht="ht-v7" style="background:radial-gradient(at 30% 30%,#fb923c,#ec4899 60%,#8b5cf6)" title="메쉬" aria-label="메쉬"></button>
+    <button class="ht-dot" data-ht="ht-v8" style="background:#fff" title="미니멀 라이트" aria-label="미니멀 라이트"></button>
+    <button class="ht-dot" data-ht="ht-v9" style="background:linear-gradient(45deg,#0f0f0f 55%,#d4af37)" title="골드 블랙" aria-label="골드 블랙"></button>
   </div>
   <!-- 탭 영역: 메인 줄(전체/지역랭킹/서울토글/비서울 지역) + 서울 접이식 서브탭 줄.
        스크롤 고정(sticky)은 두 줄을 함께 감싸는 이 래퍼가 담당한다 -->
@@ -3922,6 +4017,44 @@ def render_html(tabs: dict, total_filtered: int = 0, out_path: str = "index.html
     // 페이지 로드 시 각 탭의 월드컵 버튼 노출 조건을 초기 계산
     (function initWorldcupButtons() {{
       document.querySelectorAll('.tab-panel').forEach(function(p) {{ updateWorldcupButton(p); }});
+    }})();
+
+    // --- 배너 색상 테마: 🎨 버튼 -> 색상 점 팔레트에서 선택. 선택은 localStorage에
+    // 저장되어 재방문 시 유지 (다크모드와 같은 패턴). 서버는 관여하지 않고
+    // .hero에 ht-v* 클래스만 붙였다 뗀다. 저장값이 목록에 없으면(옛 테마 삭제 등)
+    // 기본 테마로 조용히 복귀 ---
+    var HERO_THEMES = ['', 'ht-v2', 'ht-v3', 'ht-v4', 'ht-v5', 'ht-v6', 'ht-v7', 'ht-v8', 'ht-v9'];
+
+    function applyHeroTheme(v) {{
+      if (HERO_THEMES.indexOf(v) === -1) v = '';
+      var hero = document.querySelector('.hero');
+      if (!hero) return;
+      HERO_THEMES.forEach(function(c) {{ if (c) hero.classList.remove(c); }});
+      if (v) hero.classList.add(v);
+      document.querySelectorAll('.ht-dot').forEach(function(d) {{
+        d.classList.toggle('active', (d.getAttribute('data-ht') || '') === v);
+      }});
+    }}
+
+    function toggleHeroThemePop() {{
+      var pop = document.getElementById('hero-theme-pop');
+      if (pop) pop.classList.toggle('open');
+    }}
+
+    (function initHeroTheme() {{
+      var pop = document.getElementById('hero-theme-pop');
+      if (pop) {{
+        pop.addEventListener('click', function(e) {{
+          var d = e.target;
+          if (!d.classList || !d.classList.contains('ht-dot')) return;
+          var v = d.getAttribute('data-ht') || '';
+          try {{ localStorage.setItem('naver_trend_hero_theme', v); }} catch (e2) {{ /* 사생활 보호 모드 방어 */ }}
+          applyHeroTheme(v);
+        }});
+      }}
+      var saved = '';
+      try {{ saved = localStorage.getItem('naver_trend_hero_theme') || ''; }} catch (e) {{ }}
+      if (saved) applyHeroTheme(saved);
     }})();
 
     // --- 다크모드: 헤더의 🌙/☀️ 버튼으로 전환, 선택은 localStorage에 저장되어
