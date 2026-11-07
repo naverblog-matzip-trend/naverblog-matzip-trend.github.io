@@ -1,0 +1,2163 @@
+{
+  "date": "2026-11-08",
+  "regions": {
+    "강남": [
+      {
+        "name": "정희 강남역점",
+        "category": "한식"
+      },
+      {
+        "name": "니호우양꼬치양갈비 논현본점",
+        "category": "중식"
+      },
+      {
+        "name": "미미옥 강남 신논현점",
+        "category": "한식"
+      },
+      {
+        "name": "목구멍 신논현점",
+        "category": "한식"
+      },
+      {
+        "name": "자매수산",
+        "category": "한식"
+      },
+      {
+        "name": "SADDLER HAUS",
+        "category": "카페"
+      },
+      {
+        "name": "퍼스트커피랩 강남점",
+        "category": "카페"
+      },
+      {
+        "name": "파티클리에",
+        "category": "카페"
+      },
+      {
+        "name": "그라운드8",
+        "category": "카페"
+      },
+      {
+        "name": "도레도레 코엑스점",
+        "category": "카페"
+      },
+      {
+        "name": "팔당족발",
+        "category": "한식"
+      },
+      {
+        "name": "탐라담 매봉역점",
+        "category": "한식"
+      },
+      {
+        "name": "길농원 대치점",
+        "category": "한식"
+      },
+      {
+        "name": "삼강장어",
+        "category": "한식"
+      },
+      {
+        "name": "바다왕국 아구찜&해물찜 송파점",
+        "category": "한식"
+      },
+      {
+        "name": "깜브레",
+        "category": "술집"
+      },
+      {
+        "name": "호보식당 강남역삼본점",
+        "category": "한식"
+      },
+      {
+        "name": "신사만장어",
+        "category": "한식"
+      },
+      {
+        "name": "든든아구 강남본점",
+        "category": "한식"
+      },
+      {
+        "name": "한우드림 신사직영점",
+        "category": "한식"
+      }
+    ],
+    "성수": [
+      {
+        "name": "팀홀튼 밴프 타운 성수점",
+        "category": "카페"
+      },
+      {
+        "name": "마루마끼 성수",
+        "category": "일식"
+      },
+      {
+        "name": "미도인 성수",
+        "category": "양식"
+      },
+      {
+        "name": "브샤브샤 성수본점",
+        "category": "일식"
+      },
+      {
+        "name": "진도켄 성수점",
+        "category": "술집"
+      },
+      {
+        "name": "킴스델리마켓킴시루 성수점",
+        "category": "카페"
+      },
+      {
+        "name": "어라운드데이",
+        "category": "카페"
+      },
+      {
+        "name": "ETF베이커리 성수",
+        "category": "카페"
+      },
+      {
+        "name": "티 커피",
+        "category": "카페"
+      },
+      {
+        "name": "더푸드인시티",
+        "category": "기타"
+      },
+      {
+        "name": "청수먹거리",
+        "category": "한식"
+      },
+      {
+        "name": "성수아구",
+        "category": "한식"
+      },
+      {
+        "name": "코시 성수점",
+        "category": "술집"
+      },
+      {
+        "name": "스시도쿠 더성수",
+        "category": "일식"
+      },
+      {
+        "name": "목목 성수점",
+        "category": "양식"
+      },
+      {
+        "name": "선채 성수",
+        "category": "한식"
+      },
+      {
+        "name": "성수다락",
+        "category": "양식"
+      },
+      {
+        "name": "포유 성수",
+        "category": "기타"
+      },
+      {
+        "name": "카오",
+        "category": "기타"
+      },
+      {
+        "name": "아웃오브오더",
+        "category": "한식"
+      },
+      {
+        "name": "다반 성수",
+        "category": "한식"
+      },
+      {
+        "name": "풍조미역 성수본점",
+        "category": "한식"
+      },
+      {
+        "name": "최가네샤브버섯칼국수 성수직영점",
+        "category": "한식"
+      },
+      {
+        "name": "금금 성수점",
+        "category": "한식"
+      }
+    ],
+    "잠실": [
+      {
+        "name": "바다약방 잠실새내점",
+        "category": "한식"
+      },
+      {
+        "name": "무사계 잠실본점",
+        "category": "한식"
+      },
+      {
+        "name": "남도보쌈짚 잠실직영점",
+        "category": "한식"
+      },
+      {
+        "name": "노티드 잠실롯데월드몰점",
+        "category": "카페"
+      },
+      {
+        "name": "무한팔도대패 잠실새내점",
+        "category": "한식"
+      },
+      {
+        "name": "고디바 롯데월드몰점",
+        "category": "카페"
+      },
+      {
+        "name": "차백도 잠실광장점",
+        "category": "카페"
+      },
+      {
+        "name": "영오이칠 초콜릿",
+        "category": "카페"
+      },
+      {
+        "name": "롯데호텔월드 더 라운지 앤 바",
+        "category": "카페"
+      },
+      {
+        "name": "길농원 대치점",
+        "category": "한식"
+      },
+      {
+        "name": "바다왕국 아구찜&해물찜 송파점",
+        "category": "한식"
+      },
+      {
+        "name": "신선계 춘천숯불닭갈비 잠실새내본점",
+        "category": "한식"
+      },
+      {
+        "name": "우츄진 롯데백화점 잠실점",
+        "category": "일식"
+      },
+      {
+        "name": "샐러디 잠실스타파크점",
+        "category": "기타"
+      },
+      {
+        "name": "오일리버거 잠실석촌호수직영점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 석촌호수점",
+        "category": "기타"
+      },
+      {
+        "name": "진성한우곱창 방이직영점",
+        "category": "한식"
+      },
+      {
+        "name": "돈순장 잠실새내 본점",
+        "category": "한식"
+      },
+      {
+        "name": "스시이안앤 송파가락동점",
+        "category": "일식"
+      },
+      {
+        "name": "지강한식당 잠실점",
+        "category": "한식"
+      },
+      {
+        "name": "동화고옥 롯데월드몰점",
+        "category": "한식"
+      },
+      {
+        "name": "한국의집 롯데월드몰점",
+        "category": "한식"
+      },
+      {
+        "name": "미포집 롯데월드몰점",
+        "category": "한식"
+      },
+      {
+        "name": "한비",
+        "category": "한식"
+      }
+    ],
+    "회기": [
+      {
+        "name": "거복이식당 회기 본점",
+        "category": "한식"
+      },
+      {
+        "name": "수유라멘 경희대점",
+        "category": "일식"
+      },
+      {
+        "name": "온정돈까스 경희대점",
+        "category": "일식"
+      },
+      {
+        "name": "봄의정원 회기점",
+        "category": "양식"
+      },
+      {
+        "name": "도래집 회기점",
+        "category": "한식"
+      },
+      {
+        "name": "한시십일분",
+        "category": "카페"
+      },
+      {
+        "name": "MODSPLACE",
+        "category": "카페"
+      },
+      {
+        "name": "아쎄즈",
+        "category": "카페"
+      },
+      {
+        "name": "8번가",
+        "category": "카페"
+      },
+      {
+        "name": "차백도 경희대점",
+        "category": "카페"
+      },
+      {
+        "name": "샐러디 경희대점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 동덕여대점",
+        "category": "기타"
+      },
+      {
+        "name": "암파스타레 롯데백화점 청량리점",
+        "category": "양식"
+      },
+      {
+        "name": "도읍지",
+        "category": "한식"
+      },
+      {
+        "name": "장군집",
+        "category": "한식"
+      },
+      {
+        "name": "서울본본갈비",
+        "category": "한식"
+      },
+      {
+        "name": "록갈비 회기점",
+        "category": "한식"
+      },
+      {
+        "name": "이문동그집 회기역 직영점",
+        "category": "한식"
+      },
+      {
+        "name": "경성고기꾼",
+        "category": "한식"
+      },
+      {
+        "name": "육담판 회기점",
+        "category": "한식"
+      }
+    ],
+    "여의도": [
+      {
+        "name": "모도우 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "우아라 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "무안회관 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "아오내순대 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "갯벌의조개 여의도본점",
+        "category": "한식"
+      },
+      {
+        "name": "테디뵈르하우스 더현대서울점",
+        "category": "카페"
+      },
+      {
+        "name": "루아베이커리 여의도TP타워점",
+        "category": "카페"
+      },
+      {
+        "name": "칠커피바 국회의사당역점",
+        "category": "카페"
+      },
+      {
+        "name": "킵댓 여의도점",
+        "category": "카페"
+      },
+      {
+        "name": "칠커피바 샛강역점",
+        "category": "카페"
+      },
+      {
+        "name": "쿠시카진",
+        "category": "일식"
+      },
+      {
+        "name": "옥된장 문래역점",
+        "category": "한식"
+      },
+      {
+        "name": "숯불구이몽로 여의도본점",
+        "category": "한식"
+      },
+      {
+        "name": "샐러디 여의도역점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 여의도KBS점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 여의도공원점",
+        "category": "기타"
+      },
+      {
+        "name": "숨은꼬치",
+        "category": "중식"
+      },
+      {
+        "name": "청기와가든 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "여의도 스마일삼겹 본점",
+        "category": "한식"
+      },
+      {
+        "name": "여의도스마일삼겹 여의도역점",
+        "category": "한식"
+      },
+      {
+        "name": "우월소곱창 마포직영점",
+        "category": "한식"
+      }
+    ],
+    "홍대": [
+      {
+        "name": "사토규카츠 홍대직영점",
+        "category": "일식"
+      },
+      {
+        "name": "해정집",
+        "category": "한식"
+      },
+      {
+        "name": "화산숯불구이",
+        "category": "한식"
+      },
+      {
+        "name": "오꼬로",
+        "category": "한식"
+      },
+      {
+        "name": "브리비트 홍대 연남",
+        "category": "양식"
+      },
+      {
+        "name": "아벨롭 홍대본점",
+        "category": "카페"
+      },
+      {
+        "name": "리밀커피 베이커리 합정",
+        "category": "카페"
+      },
+      {
+        "name": "조블라 홍대점",
+        "category": "카페"
+      },
+      {
+        "name": "소과당 홍대점",
+        "category": "카페"
+      },
+      {
+        "name": "신이도가",
+        "category": "카페"
+      },
+      {
+        "name": "목구멍 홍대입구역점",
+        "category": "한식"
+      },
+      {
+        "name": "설레임삼겹살 신촌점",
+        "category": "한식"
+      },
+      {
+        "name": "쿠시카진",
+        "category": "일식"
+      },
+      {
+        "name": "손탁커피",
+        "category": "카페"
+      },
+      {
+        "name": "숨은꼬치",
+        "category": "중식"
+      },
+      {
+        "name": "호랭이양꼬치",
+        "category": "중식"
+      },
+      {
+        "name": "뉴오더클럽 연남",
+        "category": "기타"
+      },
+      {
+        "name": "코시 합정역점",
+        "category": "술집"
+      },
+      {
+        "name": "샐러디 합정역점",
+        "category": "기타"
+      },
+      {
+        "name": "할랄스텍스",
+        "category": "양식"
+      },
+      {
+        "name": "주락간",
+        "category": "술집"
+      },
+      {
+        "name": "수수연남",
+        "category": "한식"
+      },
+      {
+        "name": "연남동와이탑",
+        "category": "양식"
+      }
+    ],
+    "종로": [
+      {
+        "name": "오봉집 종로점",
+        "category": "한식"
+      },
+      {
+        "name": "삼해집 종로점",
+        "category": "한식"
+      },
+      {
+        "name": "장헌감자탕 종각본점",
+        "category": "한식"
+      },
+      {
+        "name": "도산가든",
+        "category": "한식"
+      },
+      {
+        "name": "우하나 종각역점",
+        "category": "한식"
+      },
+      {
+        "name": "프랑스루브르바게트 스타필드애비뉴 그랑서울점",
+        "category": "카페"
+      },
+      {
+        "name": "끄네들로 을지로본점",
+        "category": "카페"
+      },
+      {
+        "name": "아베베 베이커리 서울",
+        "category": "카페"
+      },
+      {
+        "name": "서순라길 한옥카페",
+        "category": "카페"
+      },
+      {
+        "name": "오티씨커피 익선",
+        "category": "카페"
+      },
+      {
+        "name": "구옥",
+        "category": "한식"
+      },
+      {
+        "name": "숨은고깃집 종묘본점",
+        "category": "한식"
+      },
+      {
+        "name": "소주물 신당중앙시장점",
+        "category": "한식"
+      },
+      {
+        "name": "숨은나무",
+        "category": "한식"
+      },
+      {
+        "name": "막삼가 을지로",
+        "category": "한식"
+      },
+      {
+        "name": "을지로 헤이지니",
+        "category": "술집"
+      },
+      {
+        "name": "미쓰족발 서울명동점",
+        "category": "고기"
+      },
+      {
+        "name": "효담칼국수 닭한마리 명동본점",
+        "category": "한식"
+      },
+      {
+        "name": "샹츠마라 종로점",
+        "category": "중식"
+      },
+      {
+        "name": "숯토리 야장종로본점",
+        "category": "술집"
+      },
+      {
+        "name": "온점 을지로점",
+        "category": "한식"
+      },
+      {
+        "name": "안국약방",
+        "category": "한식"
+      }
+    ],
+    "용산": [
+      {
+        "name": "청도미나리식당 본점",
+        "category": "일식"
+      },
+      {
+        "name": "우나 용산 본점",
+        "category": "일식"
+      },
+      {
+        "name": "골수 용산점",
+        "category": "한식"
+      },
+      {
+        "name": "산씽",
+        "category": "기타"
+      },
+      {
+        "name": "아민 용산",
+        "category": "양식"
+      },
+      {
+        "name": "카펫 용산점",
+        "category": "카페"
+      },
+      {
+        "name": "잠시",
+        "category": "카페"
+      },
+      {
+        "name": "용산역카페 빵앗간토끼",
+        "category": "카페"
+      },
+      {
+        "name": "테디뵈르하우스 용산점",
+        "category": "카페"
+      },
+      {
+        "name": "르페르서울",
+        "category": "카페"
+      },
+      {
+        "name": "인기야아",
+        "category": "카페"
+      },
+      {
+        "name": "지지고 숙명여대점",
+        "category": "기타"
+      },
+      {
+        "name": "쥬케로카페 숙대점",
+        "category": "카페"
+      },
+      {
+        "name": "쿠시카진",
+        "category": "일식"
+      },
+      {
+        "name": "설레임삼겹살 신촌점",
+        "category": "한식"
+      },
+      {
+        "name": "바로뜨는집",
+        "category": "한식"
+      },
+      {
+        "name": "라따뚜이 인 서울",
+        "category": "기타"
+      },
+      {
+        "name": "뉴오더클럽 한남",
+        "category": "기타"
+      },
+      {
+        "name": "일월카츠 용산점",
+        "category": "일식"
+      },
+      {
+        "name": "계경순대국 숙대입구역점",
+        "category": "고기"
+      }
+    ],
+    "영등포": [
+      {
+        "name": "모도우 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "참나무장작구이 갈막집",
+        "category": "한식"
+      },
+      {
+        "name": "미즈 타임스퀘어점",
+        "category": "기타"
+      },
+      {
+        "name": "우아라 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "무안회관 여의도점",
+        "category": "한식"
+      },
+      {
+        "name": "신성다방",
+        "category": "카페"
+      },
+      {
+        "name": "맨홀커피",
+        "category": "카페"
+      },
+      {
+        "name": "테디뵈르하우스 더현대서울점",
+        "category": "카페"
+      },
+      {
+        "name": "베르데커피",
+        "category": "카페"
+      },
+      {
+        "name": "멜라 타임스퀘어점",
+        "category": "카페"
+      },
+      {
+        "name": "옥된장 문래역점",
+        "category": "한식"
+      },
+      {
+        "name": "인기맛집",
+        "category": "한식"
+      },
+      {
+        "name": "쿠시카진",
+        "category": "일식"
+      },
+      {
+        "name": "목구멍 홍대입구역점",
+        "category": "한식"
+      },
+      {
+        "name": "설레임삼겹살 신촌점",
+        "category": "한식"
+      },
+      {
+        "name": "청기와타운 영등포본점",
+        "category": "한식"
+      },
+      {
+        "name": "간재비",
+        "category": "한식"
+      },
+      {
+        "name": "숯불구이몽로 여의도본점",
+        "category": "한식"
+      },
+      {
+        "name": "샐러디 영등포구청역점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 여의도역점",
+        "category": "기타"
+      }
+    ],
+    "연남": [
+      {
+        "name": "카츠스위스",
+        "category": "일식"
+      },
+      {
+        "name": "웅기로 연남",
+        "category": "카페"
+      },
+      {
+        "name": "버터앤쉘터 연남점",
+        "category": "카페"
+      },
+      {
+        "name": "삼국정 연남본점",
+        "category": "중식"
+      },
+      {
+        "name": "바다회사랑 연남점",
+        "category": "한식"
+      },
+      {
+        "name": "김보람 초콜릿 연남직영점",
+        "category": "카페"
+      },
+      {
+        "name": "오앤",
+        "category": "카페"
+      },
+      {
+        "name": "폴리스팬케이크 연남점",
+        "category": "카페"
+      },
+      {
+        "name": "목구멍 홍대입구역점",
+        "category": "한식"
+      },
+      {
+        "name": "설레임삼겹살 신촌점",
+        "category": "한식"
+      },
+      {
+        "name": "손탁커피",
+        "category": "카페"
+      },
+      {
+        "name": "일기",
+        "category": "카페"
+      },
+      {
+        "name": "뉴오더클럽 연남",
+        "category": "기타"
+      },
+      {
+        "name": "아민 연남",
+        "category": "양식"
+      },
+      {
+        "name": "숨은꼬치",
+        "category": "중식"
+      },
+      {
+        "name": "도우클럽 연희본점",
+        "category": "기타"
+      },
+      {
+        "name": "연남동와이탑",
+        "category": "양식"
+      },
+      {
+        "name": "수수연남",
+        "category": "한식"
+      },
+      {
+        "name": "할랄스텍스",
+        "category": "양식"
+      },
+      {
+        "name": "호랭이양꼬치",
+        "category": "중식"
+      },
+      {
+        "name": "주락간",
+        "category": "술집"
+      }
+    ],
+    "동탄": [
+      {
+        "name": "콘타이 동탄타임테라스점",
+        "category": "기타"
+      },
+      {
+        "name": "돼통령 동탄북광장점",
+        "category": "한식"
+      },
+      {
+        "name": "고품달 동탄호수본점",
+        "category": "한식"
+      },
+      {
+        "name": "박만배아리랑보쌈 동탄점",
+        "category": "한식"
+      },
+      {
+        "name": "경자수산 동탄영천점",
+        "category": "한식"
+      },
+      {
+        "name": "창억떡 동탄점",
+        "category": "카페"
+      },
+      {
+        "name": "동경빵집",
+        "category": "카페"
+      },
+      {
+        "name": "하얀풍차제과점 동탄역점",
+        "category": "카페"
+      },
+      {
+        "name": "스타벅스 동탄목동점",
+        "category": "카페"
+      },
+      {
+        "name": "우리케이크",
+        "category": "카페"
+      },
+      {
+        "name": "샤브20 경기오산점",
+        "category": "일식"
+      },
+      {
+        "name": "더몰트하우스 동탄2신도시점",
+        "category": "양식"
+      },
+      {
+        "name": "대궐막국수 동탄오산직영점",
+        "category": "한식"
+      },
+      {
+        "name": "샐러디 동탄역점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 동탄센트럴파크점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 동탄영천점",
+        "category": "기타"
+      },
+      {
+        "name": "샤브20 동탄능동점",
+        "category": "일식"
+      },
+      {
+        "name": "참솥 동탄레이크꼬모점",
+        "category": "한식"
+      },
+      {
+        "name": "유평리생선집 동탄본점",
+        "category": "한식"
+      },
+      {
+        "name": "남도연프리미엄",
+        "category": "한식"
+      },
+      {
+        "name": "봄설 본점",
+        "category": "한식"
+      },
+      {
+        "name": "양푼이김치찌개&삼겹살",
+        "category": "한식"
+      }
+    ],
+    "부산": [
+      {
+        "name": "1988부산한우집",
+        "category": "한식"
+      },
+      {
+        "name": "으뜸스시 부산서면점",
+        "category": "일식"
+      },
+      {
+        "name": "우리포차 본점",
+        "category": "한식"
+      },
+      {
+        "name": "화산닭불고기 서면점",
+        "category": "한식"
+      },
+      {
+        "name": "어쭈 서면본점",
+        "category": "한식"
+      },
+      {
+        "name": "마더린러 베이글 해운대점",
+        "category": "카페"
+      },
+      {
+        "name": "데이오프데이",
+        "category": "카페"
+      },
+      {
+        "name": "오르디",
+        "category": "카페"
+      },
+      {
+        "name": "아틀리에 스미다 미포점",
+        "category": "카페"
+      },
+      {
+        "name": "나뭇잎마을 광안리점",
+        "category": "카페"
+      },
+      {
+        "name": "뽁순이볶음밥&짜글이대가&인기급상승떡볶이 서면점",
+        "category": "한식"
+      },
+      {
+        "name": "다이도코로 롯데백화점 광복점",
+        "category": "일식"
+      },
+      {
+        "name": "행복한오리 구서",
+        "category": "한식"
+      },
+      {
+        "name": "은언손칼국수",
+        "category": "한식"
+      },
+      {
+        "name": "가얏골감자탕 학장점",
+        "category": "한식"
+      },
+      {
+        "name": "숨은맛집 하이든대동",
+        "category": "한식"
+      },
+      {
+        "name": "한어부의고등어사랑 해운대",
+        "category": "한식"
+      },
+      {
+        "name": "부산 송정맛집 송정코다리 본점",
+        "category": "한식"
+      },
+      {
+        "name": "물고기삼촌",
+        "category": "한식"
+      },
+      {
+        "name": "궁전활어",
+        "category": "한식"
+      }
+    ],
+    "제주": [
+      {
+        "name": "도갈비 공항점",
+        "category": "한식"
+      },
+      {
+        "name": "제주마음",
+        "category": "한식"
+      },
+      {
+        "name": "하영 흑돼지구이집",
+        "category": "한식"
+      },
+      {
+        "name": "아랑족발",
+        "category": "한식"
+      },
+      {
+        "name": "동문시장 금복식당",
+        "category": "한식"
+      },
+      {
+        "name": "베이크하우스 운포피우",
+        "category": "카페"
+      },
+      {
+        "name": "해지개",
+        "category": "카페"
+      },
+      {
+        "name": "폴 바셋 제주공항 국내선점",
+        "category": "카페"
+      },
+      {
+        "name": "서귀포 제주에인감귤밭 카페",
+        "category": "카페"
+      },
+      {
+        "name": "유지커피웍스",
+        "category": "카페"
+      },
+      {
+        "name": "금능샌드",
+        "category": "양식"
+      },
+      {
+        "name": "삼미횟집 제주공항점",
+        "category": "한식"
+      },
+      {
+        "name": "홍쉐프의중국집",
+        "category": "중식"
+      },
+      {
+        "name": "대게마을",
+        "category": "기타"
+      },
+      {
+        "name": "탐라중식당",
+        "category": "중식"
+      },
+      {
+        "name": "명물",
+        "category": "한식"
+      },
+      {
+        "name": "돈게도라 근고기",
+        "category": "한식"
+      },
+      {
+        "name": "모토이시 제주연동점",
+        "category": "고기"
+      },
+      {
+        "name": "작제도 흑돼지 장작구이",
+        "category": "한식"
+      },
+      {
+        "name": "더웨이팅",
+        "category": "일식"
+      },
+      {
+        "name": "제돈상회",
+        "category": "한식"
+      },
+      {
+        "name": "제주고사리해장국 중문본점",
+        "category": "한식"
+      },
+      {
+        "name": "달치즈 구좌세화점",
+        "category": "카페"
+      },
+      {
+        "name": "도야짬뽕 화북점",
+        "category": "중식"
+      }
+    ],
+    "대구": [
+      {
+        "name": "폰타나커피",
+        "category": "카페"
+      },
+      {
+        "name": "플루니",
+        "category": "카페"
+      },
+      {
+        "name": "교동 태공루",
+        "category": "술집"
+      },
+      {
+        "name": "공주얼큰이칼국수",
+        "category": "한식"
+      },
+      {
+        "name": "오이시카츠 동성로본점",
+        "category": "일식"
+      },
+      {
+        "name": "벨베꼼메",
+        "category": "카페"
+      },
+      {
+        "name": "스테드",
+        "category": "카페"
+      },
+      {
+        "name": "호랭이제과",
+        "category": "카페"
+      },
+      {
+        "name": "살롱슈크레 더현대 대구점",
+        "category": "카페"
+      },
+      {
+        "name": "대구 수상한한옥집",
+        "category": "술집"
+      },
+      {
+        "name": "숨은집 동성로본점",
+        "category": "양식"
+      },
+      {
+        "name": "듀얼몬스터 시지점",
+        "category": "기타"
+      },
+      {
+        "name": "참윤슬갈비 칠성점",
+        "category": "한식"
+      },
+      {
+        "name": "막삼가",
+        "category": "한식"
+      },
+      {
+        "name": "막창덕후 종로직영점",
+        "category": "한식"
+      },
+      {
+        "name": "노포숯불 동성로 삼덕동점",
+        "category": "한식"
+      },
+      {
+        "name": "야끼니꾸 고점 약령시본점",
+        "category": "한식"
+      },
+      {
+        "name": "포비 쌀국수 동성로본점",
+        "category": "기타"
+      },
+      {
+        "name": "바스코타코 대구동성로",
+        "category": "기타"
+      },
+      {
+        "name": "향택 본점",
+        "category": "한식"
+      },
+      {
+        "name": "동곡제면 대구동성로본점",
+        "category": "한식"
+      },
+      {
+        "name": "반월당부자식당",
+        "category": "한식"
+      },
+      {
+        "name": "향택 대봉점",
+        "category": "한식"
+      },
+      {
+        "name": "고니식탁 경대북문 본점",
+        "category": "한식"
+      }
+    ],
+    "인천": [
+      {
+        "name": "조우곱도리탕 인천송도타임스페이스 본점",
+        "category": "한식"
+      },
+      {
+        "name": "탐라담 송도점",
+        "category": "한식"
+      },
+      {
+        "name": "육미안 인천구월점",
+        "category": "고기"
+      },
+      {
+        "name": "에그브레이크 비스트로",
+        "category": "양식"
+      },
+      {
+        "name": "아롬베이크",
+        "category": "카페"
+      },
+      {
+        "name": "팥티오 부평점",
+        "category": "카페"
+      },
+      {
+        "name": "투썸플레이스 인천문학점",
+        "category": "카페"
+      },
+      {
+        "name": "뚜레쥬르 인천공항T1 입국점",
+        "category": "카페"
+      },
+      {
+        "name": "송베이",
+        "category": "카페"
+      },
+      {
+        "name": "중앙축산 인기생고기구이",
+        "category": "한식"
+      },
+      {
+        "name": "카페 옵스트",
+        "category": "카페"
+      },
+      {
+        "name": "인기급상승떡볶이 주안본점",
+        "category": "분식"
+      },
+      {
+        "name": "홍백감자탕",
+        "category": "한식"
+      },
+      {
+        "name": "매점 인기가요 주안점",
+        "category": "카페"
+      },
+      {
+        "name": "숯불주먹고기",
+        "category": "한식"
+      },
+      {
+        "name": "우대포 송도달빛축제공원점",
+        "category": "한식"
+      },
+      {
+        "name": "제일면옥 송도본점",
+        "category": "한식"
+      },
+      {
+        "name": "더바른곱한우곱창 부평시장역본점",
+        "category": "한식"
+      },
+      {
+        "name": "꾸석지돌판한우 인천당하완정역점",
+        "category": "고기"
+      },
+      {
+        "name": "부평직화구이쌈밥",
+        "category": "한식"
+      },
+      {
+        "name": "금갱돈연탄구이전문점",
+        "category": "한식"
+      },
+      {
+        "name": "흑돼지형제들 가정루원시티본점",
+        "category": "한식"
+      },
+      {
+        "name": "을지로 연탄구이 루원시티점",
+        "category": "한식"
+      },
+      {
+        "name": "더몰트하우스 송도점",
+        "category": "양식"
+      }
+    ],
+    "대전": [
+      {
+        "name": "대전굴해물칼국수",
+        "category": "한식"
+      },
+      {
+        "name": "모이텐",
+        "category": "일식"
+      },
+      {
+        "name": "대장간 대전유성점",
+        "category": "한식"
+      },
+      {
+        "name": "형제횟집",
+        "category": "한식"
+      },
+      {
+        "name": "퐁당샤브 유성점",
+        "category": "일식"
+      },
+      {
+        "name": "타카사",
+        "category": "카페"
+      },
+      {
+        "name": "키츠에 커피하우스",
+        "category": "카페"
+      },
+      {
+        "name": "챔프스페이스커피로스터스 신성점",
+        "category": "카페"
+      },
+      {
+        "name": "하늘만큼",
+        "category": "카페"
+      },
+      {
+        "name": "드루어리",
+        "category": "카페"
+      },
+      {
+        "name": "눈꽃샤브 도룡직영점",
+        "category": "일식"
+      },
+      {
+        "name": "꿀벌땅콩빵 가장한민점",
+        "category": "카페"
+      },
+      {
+        "name": "맛존매콤닭갈비 충대궁동점",
+        "category": "한식"
+      },
+      {
+        "name": "숨은 달인 횟집 물회",
+        "category": "한식"
+      },
+      {
+        "name": "장원갑칼국수 대전유성점",
+        "category": "한식"
+      },
+      {
+        "name": "병규돈까스 관평동 테크노점",
+        "category": "일식"
+      },
+      {
+        "name": "손의손 대전봉명점",
+        "category": "기타"
+      },
+      {
+        "name": "육화탄 대전롯데백화점 괴정점",
+        "category": "한식"
+      },
+      {
+        "name": "삼복씨닭갈비",
+        "category": "한식"
+      },
+      {
+        "name": "연암숯불뼈구이&감자탕",
+        "category": "한식"
+      },
+      {
+        "name": "박봉명생갈비 노은점",
+        "category": "한식"
+      },
+      {
+        "name": "한밭경양식 월평본점",
+        "category": "일식"
+      },
+      {
+        "name": "굴뚝막창 봉명점",
+        "category": "한식"
+      }
+    ],
+    "광주": [
+      {
+        "name": "규슈 상무점",
+        "category": "일식"
+      },
+      {
+        "name": "쿠우쿠우 골드 광주수완점",
+        "category": "일식"
+      },
+      {
+        "name": "용가회전훠궈 광주충장로점",
+        "category": "중식"
+      },
+      {
+        "name": "규슈 동명본점",
+        "category": "일식"
+      },
+      {
+        "name": "한식경",
+        "category": "양식"
+      },
+      {
+        "name": "크림집",
+        "category": "카페"
+      },
+      {
+        "name": "테사노 테라스",
+        "category": "카페"
+      },
+      {
+        "name": "일이일오 본점",
+        "category": "카페"
+      },
+      {
+        "name": "기와",
+        "category": "카페"
+      },
+      {
+        "name": "쑥스초코파이",
+        "category": "카페"
+      },
+      {
+        "name": "메가MGC커피 광주대점",
+        "category": "카페"
+      },
+      {
+        "name": "함부르크버거 본점",
+        "category": "기타"
+      },
+      {
+        "name": "함부르크버거 금호점",
+        "category": "기타"
+      },
+      {
+        "name": "인기식당",
+        "category": "한식"
+      },
+      {
+        "name": "베네루모 동명",
+        "category": "양식"
+      },
+      {
+        "name": "호르몬치치 광주용봉점",
+        "category": "한식"
+      },
+      {
+        "name": "안자고 한우곱창 상무점",
+        "category": "한식"
+      },
+      {
+        "name": "세석목장",
+        "category": "한식"
+      },
+      {
+        "name": "호르몬치치 광주첨단점",
+        "category": "한식"
+      },
+      {
+        "name": "진 민속촌",
+        "category": "한식"
+      },
+      {
+        "name": "미미원",
+        "category": "한식"
+      },
+      {
+        "name": "명불허전하하주",
+        "category": "술집"
+      }
+    ],
+    "수원": [
+      {
+        "name": "제주고사리닭칼국수 시콜",
+        "category": "한식"
+      },
+      {
+        "name": "행궁동 블레스브런치바",
+        "category": "양식"
+      },
+      {
+        "name": "샤브야키 수원광교점",
+        "category": "일식"
+      },
+      {
+        "name": "깐깐 AK플라자 수원점",
+        "category": "기타"
+      },
+      {
+        "name": "테이스팅뮤지엄 행궁동",
+        "category": "양식"
+      },
+      {
+        "name": "룹 디저트하우스",
+        "category": "카페"
+      },
+      {
+        "name": "카페디아즈 수원종합운동장점",
+        "category": "카페"
+      },
+      {
+        "name": "도나스데이 본점",
+        "category": "카페"
+      },
+      {
+        "name": "퍼스트커피랩행궁",
+        "category": "카페"
+      },
+      {
+        "name": "행궁동 쥐쥐씨",
+        "category": "카페"
+      },
+      {
+        "name": "오렌지베이글 본점",
+        "category": "카페"
+      },
+      {
+        "name": "수원참숯돼지갈비",
+        "category": "한식"
+      },
+      {
+        "name": "별미닭갈비막국수",
+        "category": "한식"
+      },
+      {
+        "name": "메가MGC커피 수지동천점",
+        "category": "카페"
+      },
+      {
+        "name": "마라홀릭 마라탕 의왕역점",
+        "category": "중식"
+      },
+      {
+        "name": "수연만장 수원고색점",
+        "category": "한식"
+      },
+      {
+        "name": "희주반가72",
+        "category": "한식"
+      },
+      {
+        "name": "야키니쿠루 수원역본점",
+        "category": "한식"
+      },
+      {
+        "name": "양마담 방촌양고기 인계점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 영통점",
+        "category": "기타"
+      }
+    ],
+    "울산": [
+      {
+        "name": "샤브르정원 울산남구점",
+        "category": "일식"
+      },
+      {
+        "name": "쿠우쿠우 울산중구점",
+        "category": "일식"
+      },
+      {
+        "name": "덕수파스타 울산삼산",
+        "category": "양식"
+      },
+      {
+        "name": "카넬불레",
+        "category": "카페"
+      },
+      {
+        "name": "초담미역전골 본점",
+        "category": "일식"
+      },
+      {
+        "name": "밀리언하우스",
+        "category": "카페"
+      },
+      {
+        "name": "카페 솔티드",
+        "category": "카페"
+      },
+      {
+        "name": "그리다빵 울산점",
+        "category": "카페"
+      },
+      {
+        "name": "투썸플레이스 울산문수로아테라점",
+        "category": "카페"
+      },
+      {
+        "name": "마시코 태화강국가정원점",
+        "category": "한식"
+      },
+      {
+        "name": "두구동부산갈매기",
+        "category": "한식"
+      },
+      {
+        "name": "똘이네초장",
+        "category": "한식"
+      },
+      {
+        "name": "사잇길",
+        "category": "술집"
+      },
+      {
+        "name": "달삼주택 울산삼산달동 본점",
+        "category": "술집"
+      },
+      {
+        "name": "숨은골목",
+        "category": "술집"
+      },
+      {
+        "name": "독도천국",
+        "category": "술집"
+      },
+      {
+        "name": "유쾌한낙지 태화강국가정원본점",
+        "category": "한식"
+      },
+      {
+        "name": "샤브올데이 울산삼산점",
+        "category": "일식"
+      },
+      {
+        "name": "미도가 울산삼산점",
+        "category": "한식"
+      },
+      {
+        "name": "명륜진사갈비 울산성남점",
+        "category": "한식"
+      },
+      {
+        "name": "암파스타레 울산 삼산",
+        "category": "양식"
+      },
+      {
+        "name": "김천촌돼지",
+        "category": "한식"
+      }
+    ],
+    "전주": [
+      {
+        "name": "공탕집",
+        "category": "한식"
+      },
+      {
+        "name": "효자수산",
+        "category": "술집"
+      },
+      {
+        "name": "다가생구이 본점",
+        "category": "한식"
+      },
+      {
+        "name": "에그하우스",
+        "category": "일식"
+      },
+      {
+        "name": "온담 덕진 직영점",
+        "category": "한식"
+      },
+      {
+        "name": "봉동당 전주한옥마을점",
+        "category": "카페"
+      },
+      {
+        "name": "풍년제과 본점",
+        "category": "카페"
+      },
+      {
+        "name": "봉동당",
+        "category": "카페"
+      },
+      {
+        "name": "키노앤코",
+        "category": "카페"
+      },
+      {
+        "name": "MTT 에코시티본점",
+        "category": "카페"
+      },
+      {
+        "name": "인기식당",
+        "category": "한식"
+      },
+      {
+        "name": "맨하탄베이글 전주효자동본점",
+        "category": "카페"
+      },
+      {
+        "name": "호르몬치치 전주신시가지점",
+        "category": "한식"
+      },
+      {
+        "name": "샐러디&샌드위치 평화점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 전주송천점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 전북도청점",
+        "category": "기타"
+      },
+      {
+        "name": "멘야케이 전주신시가지점",
+        "category": "일식"
+      },
+      {
+        "name": "모현동참숯집 전주송천동점",
+        "category": "한식"
+      },
+      {
+        "name": "한옥마을물갈비",
+        "category": "한식"
+      },
+      {
+        "name": "기와",
+        "category": "한식"
+      },
+      {
+        "name": "호남각",
+        "category": "한식"
+      },
+      {
+        "name": "녹두꽃",
+        "category": "한식"
+      },
+      {
+        "name": "금양정 전주본점",
+        "category": "한식"
+      }
+    ],
+    "청주": [
+      {
+        "name": "소보양본가 가경강서점",
+        "category": "한식"
+      },
+      {
+        "name": "스톤폴스",
+        "category": "카페"
+      },
+      {
+        "name": "샤브20 청주오송점",
+        "category": "일식"
+      },
+      {
+        "name": "오리엔탈시티 2F",
+        "category": "중식"
+      },
+      {
+        "name": "에잇스타",
+        "category": "카페"
+      },
+      {
+        "name": "우리 베이커리",
+        "category": "카페"
+      },
+      {
+        "name": "싶빵공장 청주터미널점",
+        "category": "카페"
+      },
+      {
+        "name": "스티즈커피베이커리 동남점",
+        "category": "카페"
+      },
+      {
+        "name": "개신동 블랑제리 보보",
+        "category": "카페"
+      },
+      {
+        "name": "79bake",
+        "category": "카페"
+      },
+      {
+        "name": "정력왕쭈꾸미",
+        "category": "한식"
+      },
+      {
+        "name": "장원갑 칼국수 청주점",
+        "category": "한식"
+      },
+      {
+        "name": "숨은집",
+        "category": "술집"
+      },
+      {
+        "name": "삼미화로 본점",
+        "category": "한식"
+      },
+      {
+        "name": "부강옥 청주직영점",
+        "category": "한식"
+      },
+      {
+        "name": "가화1987 바지락칼국수보쌈 청주복대지웰점",
+        "category": "한식"
+      },
+      {
+        "name": "호이안 본점",
+        "category": "기타"
+      },
+      {
+        "name": "고기다움",
+        "category": "한식"
+      },
+      {
+        "name": "어믜뜰 등갈비찜 청주봉명동본점",
+        "category": "한식"
+      },
+      {
+        "name": "숯불에닭 청주율량점",
+        "category": "한식"
+      },
+      {
+        "name": "삼동소바 세종점",
+        "category": "술집"
+      }
+    ],
+    "속초": [
+      {
+        "name": "수빈이네찜 본점",
+        "category": "한식"
+      },
+      {
+        "name": "외페르",
+        "category": "카페"
+      },
+      {
+        "name": "대게여왕",
+        "category": "기타"
+      },
+      {
+        "name": "중앙닭강정 속초본점",
+        "category": "치킨"
+      },
+      {
+        "name": "우마미",
+        "category": "일식"
+      },
+      {
+        "name": "보사노바 커피로스터스 속초점",
+        "category": "카페"
+      },
+      {
+        "name": "웨일라잇",
+        "category": "카페"
+      },
+      {
+        "name": "니들",
+        "category": "카페"
+      },
+      {
+        "name": "마카오박",
+        "category": "카페"
+      },
+      {
+        "name": "숨은책방",
+        "category": "카페"
+      },
+      {
+        "name": "밀키블루스",
+        "category": "카페"
+      },
+      {
+        "name": "속초감자빵",
+        "category": "카페"
+      },
+      {
+        "name": "이찌바라멘",
+        "category": "일식"
+      },
+      {
+        "name": "속초진숯불닭갈비 중앙시장본점",
+        "category": "한식"
+      },
+      {
+        "name": "키친온유",
+        "category": "기타"
+      },
+      {
+        "name": "원조옥돌할머니순두부",
+        "category": "한식"
+      },
+      {
+        "name": "돈우마을 본점",
+        "category": "한식"
+      },
+      {
+        "name": "대청마루",
+        "category": "한식"
+      },
+      {
+        "name": "왕가수라청",
+        "category": "한식"
+      },
+      {
+        "name": "북극해고등어 속초엑스포점",
+        "category": "한식"
+      },
+      {
+        "name": "도천 짚불구이 본점",
+        "category": "한식"
+      },
+      {
+        "name": "달빛돈가 속초본점",
+        "category": "한식"
+      },
+      {
+        "name": "속초먹돈",
+        "category": "한식"
+      },
+      {
+        "name": "돌돼지314 자갈구이삼겹살 속초본점",
+        "category": "한식"
+      },
+      {
+        "name": "굽탁 속초엑스포 본점",
+        "category": "한식"
+      },
+      {
+        "name": "속초동경",
+        "category": "일식"
+      },
+      {
+        "name": "우동당",
+        "category": "일식"
+      },
+      {
+        "name": "요리바카 속초점",
+        "category": "일식"
+      },
+      {
+        "name": "흰다정",
+        "category": "카페"
+      },
+      {
+        "name": "히모노야",
+        "category": "술집"
+      },
+      {
+        "name": "사계절시장골목집 속초점",
+        "category": "술집"
+      },
+      {
+        "name": "속초회관",
+        "category": "술집"
+      },
+      {
+        "name": "아프리카",
+        "category": "술집"
+      },
+      {
+        "name": "속초거북이",
+        "category": "술집"
+      }
+    ],
+    "세종": [
+      {
+        "name": "화로양갈비 세종도담점",
+        "category": "기타"
+      },
+      {
+        "name": "세종 신짱야뒷고기 나성본점",
+        "category": "한식"
+      },
+      {
+        "name": "올리부스 꼼파뇨 세종보람점",
+        "category": "기타"
+      },
+      {
+        "name": "신복원청두훠궈",
+        "category": "중식"
+      },
+      {
+        "name": "다이너 세종시청점",
+        "category": "양식"
+      },
+      {
+        "name": "유람 커피로스터스 세종점",
+        "category": "카페"
+      },
+      {
+        "name": "쩡이당 세종본점",
+        "category": "카페"
+      },
+      {
+        "name": "키너바웃커피",
+        "category": "카페"
+      },
+      {
+        "name": "아쌍트",
+        "category": "카페"
+      },
+      {
+        "name": "포시즌베리",
+        "category": "카페"
+      },
+      {
+        "name": "화로양갈비 세종나성점",
+        "category": "한식"
+      },
+      {
+        "name": "제산한방오리",
+        "category": "한식"
+      },
+      {
+        "name": "샐러디 세종시청점",
+        "category": "기타"
+      },
+      {
+        "name": "샐러디 세종새롬점",
+        "category": "기타"
+      },
+      {
+        "name": "삼동소바 세종점",
+        "category": "술집"
+      },
+      {
+        "name": "밥꽃한상",
+        "category": "한식"
+      },
+      {
+        "name": "디스이즈평양",
+        "category": "한식"
+      },
+      {
+        "name": "갓솥 세종점",
+        "category": "한식"
+      },
+      {
+        "name": "한누리반상",
+        "category": "한식"
+      },
+      {
+        "name": "홀인원가든",
+        "category": "한식"
+      },
+      {
+        "name": "푸고 세종점",
+        "category": "한식"
+      },
+      {
+        "name": "탄영 세종본점",
+        "category": "한식"
+      },
+      {
+        "name": "옹기묵방",
+        "category": "한식"
+      },
+      {
+        "name": "우주옥 세종본점",
+        "category": "한식"
+      },
+      {
+        "name": "혼젠",
+        "category": "일식"
+      },
+      {
+        "name": "메구미",
+        "category": "일식"
+      },
+      {
+        "name": "모츠모 세종도담점",
+        "category": "술집"
+      },
+      {
+        "name": "사키",
+        "category": "일식"
+      },
+      {
+        "name": "멘야 쿠지라",
+        "category": "일식"
+      },
+      {
+        "name": "굄",
+        "category": "술집"
+      },
+      {
+        "name": "야키 나성점",
+        "category": "술집"
+      },
+      {
+        "name": "쏘시지요 세종나성점",
+        "category": "술집"
+      },
+      {
+        "name": "숯토리 세종나성점",
+        "category": "술집"
+      },
+      {
+        "name": "이자카야 오늘",
+        "category": "술집"
+      }
+    ]
+  }
+}
